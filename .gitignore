@@ -1,0 +1,11 @@
+#python
+backend/venv
+backend/__pycache__/
+backend/.env
+
+#Node
+frontend/node_modules/
+frontend/dist/
+
+#local storage
+F:DDAS_Storage

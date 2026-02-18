@@ -3,8 +3,8 @@ import shutil
 import hashlib
 import io
 from datetime import datetime, timedelta
-from fastapi.responses import FileResponse 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
+from fastapi.responses import FileResponse, JSONResponse 
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pymongo import MongoClient
@@ -21,7 +21,7 @@ ALGORITHM = "HS256"
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
 
 
-STORAGE_DIR = "F:/DDAS_Storage"  
+STORAGE_DIR = os.getenv("STORAGE_PATH", "F:/DDAS_Storage")  
 
 
 if not os.path.exists(STORAGE_DIR):
@@ -32,6 +32,14 @@ if not os.path.exists(STORAGE_DIR):
         print(f" Error: Could not create directory. {e}")
 
 app = FastAPI()
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    print(f"Global Exception: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An unexpected error occurred. Please contact support."}
+    )
 
 
 app.add_middleware(
@@ -45,8 +53,22 @@ app.add_middleware(
 
 client = MongoClient(MONGO_URI)
 db = client["ddas_db"]
+
 users_collection = db["users"]
 files_collection = db["files"]
+logs_collection = db["logs"]
+
+def log_activity(username: str, action: str, details: str = ""):
+    """Helper to log system activities"""
+    try:
+        logs_collection.insert_one({
+            "username": username,
+            "action": action,
+            "details": details,
+            "timestamp": datetime.utcnow() + timedelta(hours=5, minutes=30)
+        })
+    except Exception as e:
+        print(f"Failed to log activity: {e}")
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -85,7 +107,7 @@ async def register(
     
     final_role = "employee"
     if role == "admin":
-        if admin_secret == "DDAS_2025_SECURE": 
+        if admin_secret == os.getenv("ADMIN_SECRET"): 
             final_role = "admin"
         else:
             raise HTTPException(status_code=403, detail="Invalid Admin Secret Key")
@@ -95,6 +117,7 @@ async def register(
         "password": get_password_hash(password),
         "role": final_role 
     })
+    log_activity(username, "REGISTER", f"User registered as {final_role}")
     return {"msg": f"User created successfully as {final_role}"}
 
 @app.post("/login")
@@ -104,11 +127,63 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         raise HTTPException(status_code=401, detail="Incorrect username or password")
     
     access_token = create_access_token(data={"sub": user["username"]})
+    log_activity(user["username"], "LOGIN", "User logged in successfully")
     return {
         "access_token": access_token, 
         "role": user.get("role", "employee"),
         "username": user["username"]
     }
+
+@app.get("/users/me")
+async def read_users_me(current_user: dict = Depends(get_current_user)):
+    user_data = users_collection.find_one({"username": current_user["username"]}, {"password": 0})
+    if not user_data:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # Get stats
+    originals = files_collection.count_documents({"owner": current_user["username"], "is_duplicate": False})
+    duplicates = files_collection.count_documents({"owner": current_user["username"], "is_duplicate": True})
+    
+    # Calculate storage used by this user
+    user_files = files_collection.find({"owner": current_user["username"]})
+    storage_used = sum(f.get("size", 0) for f in user_files)
+
+    def format_bytes(s):
+        if s == 0: return "0 B"
+        for u in ['B', 'KB', 'MB', 'GB']:
+            if s < 1024: return f"{s:.1f} {u}"
+            s /= 1024
+        return f"{s:.1f} TB"
+
+    return {
+        "username": user_data["username"],
+        "role": user_data.get("role", "employee"),
+        "joined_at": str(user_data["_id"].generation_time),
+        "originals": originals,
+        "duplicates": duplicates,
+        "storage_used": format_bytes(storage_used),
+        "storage_raw": storage_used
+    }
+
+@app.post("/users/change-password")
+async def change_password(
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    current_user: dict = Depends(get_current_user)
+):
+    # Verify current password
+    user_db = users_collection.find_one({"username": current_user["username"]})
+    if not verify_password(current_password, user_db["password"]):
+        raise HTTPException(status_code=400, detail="Incorrect current password")
+    
+    # Update to new password
+    hashed_password = get_password_hash(new_password)
+    users_collection.update_one(
+        {"username": current_user["username"]},
+        {"$set": {"password": hashed_password}}
+    )
+    
+    return {"msg": "Password updated successfully"}
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
@@ -144,6 +219,9 @@ async def upload_file(file: UploadFile = File(...), current_user: dict = Depends
             "file_path": final_path 
         })
         
+
+        
+        log_activity(current_user["username"], "UPLOAD", f"Uploaded {file.filename} (Duplicate: {is_duplicate})")
         return {"status": "Uploaded", "is_duplicate": is_duplicate}
 
     except Exception as e:
@@ -180,8 +258,23 @@ async def delete_file(file_id: str, current_user: dict = Depends(get_current_use
     if current_user.get("role") != "admin" and file_doc["owner"] != current_user["username"]:
         raise HTTPException(status_code=403, detail="Unauthorized")
 
+    file_hash = file_doc.get("hash")
+    file_path = file_doc.get("file_path")
+
     files_collection.delete_one({"_id": ObjectId(file_id)})
-    return {"msg": "File record deleted"}
+    
+    # Check if any other file record uses this same hash
+    remaining_refs = files_collection.count_documents({"hash": file_hash})
+    
+    if remaining_refs == 0 and file_path and os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+            log_activity(current_user["username"], "DELETE_PHYSICAL", f"Deleted physical file for {file_doc['filename']}")
+        except Exception as e:
+            print(f"Error deleting physical file: {e}")
+
+    log_activity(current_user["username"], "DELETE_FILE", f"Deleted file record {file_doc['filename']}")
+    return {"msg": "File deleted successfully"}
 
 
 @app.get("/dashboard/stats")
@@ -291,6 +384,7 @@ async def reset_password(
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
 
+    log_activity(current_user["username"], "RESET_PASSWORD", f"Reset password for {username}")
     return {"msg": f"Password for {username} updated successfully"}
 
 
@@ -328,4 +422,17 @@ async def delete_user(username: str, current_user: dict = Depends(get_current_us
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
         
+    log_activity(current_user["username"], "DELETE_USER", f"Terminated user {username}")
     return {"msg": f"User {username} successfully removed"}
+
+@app.get("/admin/logs")
+async def get_activity_logs(current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    cursor = logs_collection.find({}).sort("timestamp", -1).limit(100)
+    logs = []
+    for log in cursor:
+        log["_id"] = str(log["_id"])
+        logs.append(log)
+    return logs

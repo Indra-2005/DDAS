@@ -1,11 +1,56 @@
-#python
-backend/venv
-backend/__pycache__/
-backend/.env
+# --- SECRETS & ENVIRONMENT VARIABLES ---
+# CRITICAL: Never commit these!
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+*.pem
+*.key
+secrets.json
 
-#Node
+# --- PYTHON BACKEND ---
+backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/venv/
+backend/.venv/
+backend/env/
+backend/.pytest_cache/
+backend/htmlcov/
+backend/.coverage
+backend/*.log
+
+# --- NODE FRONTEND ---
 frontend/node_modules/
 frontend/dist/
+frontend/build/
+frontend/.output/
+frontend/coverage/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
 
-#local storage
-F:DDAS_Storage
+# --- DATABASE & STORAGE ---
+*.sqlite3
+*.db
+*.sqlite
+DDAS_Storage/
+uploads/
+backend/static/uploads/
+
+# --- IDE & SYSTEM ---
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- LOGS ---
+logs/
+*.log

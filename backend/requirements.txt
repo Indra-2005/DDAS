@@ -2,7 +2,8 @@ fastapi
 uvicorn[standard]
 pymongo
 python-dotenv
-passlib[bcrpyt]
+passlib[bcrypt]
 python-jose[cryptography]
 python-multipart
 simhash
+aiofiles

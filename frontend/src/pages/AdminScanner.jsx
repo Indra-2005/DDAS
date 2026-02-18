@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import API from "../api"; 
+import API from "../api";
 import { AlertTriangle, Trash2, Database, ShieldAlert, ArrowRight, User } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function AdminScanner() {
   const [duplicates, setDuplicates] = useState([]);
@@ -29,13 +30,39 @@ export default function AdminScanner() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  const handleDelete = async (id) => {
-    if(!window.confirm("Delete this duplicate copy? The other copies will remain safe.")) return;
+  const handleDelete = (id) => {
+    toast((t) => (
+      <div className="flex flex-col gap-2">
+        <p className="font-bold text-slate-700">Remove this duplicate copy?</p>
+        <p className="text-xs text-slate-500">Other copies will remain safe.</p>
+        <div className="flex gap-2 mt-1">
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              performDelete(id);
+            }}
+            className="px-3 py-1 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700"
+          >
+            Confirm
+          </button>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1 bg-slate-200 text-slate-700 text-sm rounded-lg hover:bg-slate-300"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000, icon: '🛡️' });
+  };
+
+  const performDelete = async (id) => {
     try {
       await API.delete(`/files/${id}`);
-      fetchDuplicates(); 
+      fetchDuplicates();
+      toast.success("Duplicate removed");
     } catch (err) {
-      alert("Failed to delete");
+      toast.error("Failed to delete");
     }
   };
 
@@ -44,7 +71,7 @@ export default function AdminScanner() {
 
   return (
     <div className="p-6 md:p-10 max-w-5xl mx-auto min-h-screen bg-slate-50 font-sans">
-      
+
       <div className="mb-8">
         <h1 className="text-3xl font-extrabold text-slate-900 flex items-center gap-3">
           <ShieldAlert className="w-8 h-8 text-amber-500" />
@@ -65,9 +92,9 @@ export default function AdminScanner() {
         <div className="space-y-6">
           {duplicates.map((group) => (
             <div key={group._id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-              
+
               { }
-              <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+              <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-amber-100 text-amber-700 rounded-lg">
                     <Database className="w-5 h-5" />
@@ -77,7 +104,7 @@ export default function AdminScanner() {
                     <p className="text-xs text-slate-500 font-mono">ID: {group._id.substring(0, 15)}...</p>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-left md:text-right w-full md:w-auto pl-12 md:pl-0">
                   <span className="block text-sm font-bold text-slate-700">{group.count} Copies Found</span>
                   <span className="block text-xs text-amber-600 font-medium">
                     Wasting {formatSize(group.total_size)}
@@ -85,40 +112,40 @@ export default function AdminScanner() {
                 </div>
               </div>
 
-              {}
+              { }
               <div className="divide-y divide-slate-50">
                 {group.files.map((file, index) => (
-                  <div key={file._id} className="px-6 py-3 flex items-center justify-between hover:bg-slate-50">
-                    <div className="flex items-center gap-4">
+                  <div key={file._id} className="px-6 py-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0 hover:bg-slate-50 transition-colors">
+                    <div className="flex items-center gap-4 w-full md:w-auto">
                       {index === 0 ? (
-                        <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded font-bold">Original</span>
+                        <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded font-bold shrink-0">Original</span>
                       ) : (
-                        <span className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded font-bold">Copy</span>
+                        <span className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded font-bold shrink-0">Copy</span>
                       )}
-                      
-                      <div>
-                         <p className="font-medium text-slate-700 text-sm">{file.filename}</p>
-                         <p className="text-xs text-slate-500 flex items-center gap-1">
-                           <User className="w-3 h-3" /> Uploaded by <span className="font-bold">{file.owner}</span>
-                         </p>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-slate-700 text-sm truncate">{file.filename}</p>
+                        <p className="text-xs text-slate-500 flex items-center gap-1">
+                          <User className="w-3 h-3" /> Uploaded by <span className="font-bold">{file.owner}</span>
+                        </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                       <span className="text-xs text-slate-400">
-                         {new Date(file.upload_date).toLocaleDateString()}
-                       </span>
-                       
-                       { }
-                       {group.files.length > 1 && (
-                         <button 
-                           onClick={() => handleDelete(file._id)}
-                           className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                           title="Remove this copy"
-                         >
-                           <Trash2 className="w-4 h-4" />
-                         </button>
-                       )}
+                    <div className="flex items-center justify-between w-full md:w-auto md:justify-end gap-3 pl-14 md:pl-0">
+                      <span className="text-xs text-slate-400">
+                        {new Date(file.upload_date).toLocaleDateString()}
+                      </span>
+
+                      { }
+                      {group.files.length > 1 && (
+                        <button
+                          onClick={() => handleDelete(file._id)}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                          title="Remove this copy"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

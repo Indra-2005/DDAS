@@ -45,28 +45,28 @@ export default function FilePreviewModal({ file, onClose }) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-5xl h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden relative">
+            <div className="bg-white dark:bg-slate-900 w-full max-w-5xl h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden relative">
 
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-white z-10">
+                <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 z-10">
                     <div className="flex items-center gap-3 overflow-hidden">
-                        <div className={`p-2 rounded-lg ${isImage ? 'bg-purple-100 text-purple-600' : 'bg-red-100 text-red-600'}`}>
+                        <div className={`p-2 rounded-lg ${isImage ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'}`}>
                             {isImage ? <ImageIcon className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
                         </div>
-                        <h3 className="font-bold text-slate-800 truncate max-w-md" title={file.filename}>{file.filename}</h3>
+                        <h3 className="font-bold text-slate-800 dark:text-white truncate max-w-md" title={file.filename}>{file.filename}</h3>
                     </div>
                     <div className="flex items-center gap-2">
                         {!loading && !error && (
                             <button
                                 onClick={handleDownload}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-bold text-sm transition-colors"
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 font-bold text-sm transition-colors"
                             >
                                 <Download className="w-4 h-4" /> Download
                             </button>
                         )}
                         <button
                             onClick={onClose}
-                            className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500 hover:text-slate-800"
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                         >
                             <X className="w-6 h-6" />
                         </button>
@@ -74,18 +74,18 @@ export default function FilePreviewModal({ file, onClose }) {
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 bg-slate-50 overflow-auto flex items-center justify-center relative">
+                <div className="flex-1 bg-slate-50 dark:bg-slate-950 overflow-auto flex items-center justify-center relative">
                     {loading && (
                         <div className="flex flex-col items-center gap-3">
                             <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-                            <p className="font-medium text-slate-500">Loading preview...</p>
+                            <p className="font-medium text-slate-500 dark:text-slate-400">Loading preview...</p>
                         </div>
                     )}
 
                     {error && (
                         <div className="text-center p-8">
                             <p className="text-red-500 font-bold mb-2">{error}</p>
-                            <button onClick={onClose} className="text-slate-500 underline text-sm">Close Preview</button>
+                            <button onClick={onClose} className="text-slate-500 dark:text-slate-400 underline text-sm">Close Preview</button>
                         </div>
                     )}
 
@@ -99,7 +99,7 @@ export default function FilePreviewModal({ file, onClose }) {
                             )}
                             {!isImage && !isPDF && (
                                 <div className="text-center">
-                                    <p className="text-slate-500 font-medium mb-4">Preview not available for this file type.</p>
+                                    <p className="text-slate-500 dark:text-slate-400 font-medium mb-4">Preview not available for this file type.</p>
                                     <button
                                         onClick={handleDownload}
                                         className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg"

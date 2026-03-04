@@ -151,9 +151,9 @@ export default function Files() {
                         </td>
                         <td className="px-6 py-4">
                           {file.is_duplicate ? (
-                            <span className="text-amber-600 bg-amber-50 px-2 py-1 rounded text-xs font-bold border border-amber-100">Duplicate</span>
+                            <span className="text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded text-xs font-bold border border-amber-100 dark:border-amber-800/30">Duplicate</span>
                           ) : (
-                            <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-xs font-bold border border-emerald-100">Unique</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded text-xs font-bold border border-emerald-100 dark:border-emerald-800/30">Unique</span>
                           )}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 font-mono">{formatSize(file.size)}</td>
@@ -191,9 +191,9 @@ export default function Files() {
                       </div>
                     </div>
                     {file.is_duplicate ? (
-                      <span className="text-amber-600 bg-amber-50 px-2 py-1 rounded text-[10px] font-bold border border-amber-100">Duplicate</span>
+                      <span className="text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded text-[10px] font-bold border border-amber-100 dark:border-amber-800/30">Duplicate</span>
                     ) : (
-                      <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-[10px] font-bold border border-emerald-100">Unique</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded text-[10px] font-bold border border-emerald-100 dark:border-emerald-800/30">Unique</span>
                     )}
                   </div>
 

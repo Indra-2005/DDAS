@@ -33,27 +33,27 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans">
-      <div className="w-full max-w-md bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 font-sans">
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800">
 
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <UserPlus className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-extrabold text-slate-900">Create Account</h2>
-          <p className="text-slate-500 mt-2">Join the secure DDAS network.</p>
+          <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">Create Account</h2>
+          <p className="text-slate-500 dark:text-slate-400 mt-2">Join the secure DDAS network.</p>
         </div>
 
         <form onSubmit={handleRegister} className="space-y-5">
           {/* Username */}
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Username</label>
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Username</label>
             <div className="relative">
               <User className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
               <input
                 type="text"
                 placeholder="Choose a username"
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
@@ -63,13 +63,13 @@ export default function Register() {
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Password</label>
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Password</label>
             <div className="relative">
               <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
               <input
                 type="password"
                 placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -79,11 +79,11 @@ export default function Register() {
 
           {/* Role Selection */}
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Account Type</label>
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Account Type</label>
             <div className="relative">
               <Shield className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
               <select
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none appearance-none cursor-pointer transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none appearance-none cursor-pointer transition-all text-slate-700 dark:text-slate-200"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
               >
@@ -96,29 +96,29 @@ export default function Register() {
           { }
           {role === 'admin' && (
             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-              <label className="block text-sm font-bold text-amber-600 mb-2 flex items-center gap-2">
+              <label className="block text-sm font-bold text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-2">
                 <Lock className="w-4 h-4" /> Admin Secret Key
               </label>
               <input
                 type="password"
                 placeholder="Enter secret admin code"
-                className="w-full px-4 py-3 bg-amber-50 border border-amber-200 text-amber-900 placeholder-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none transition-all"
+                className="w-full px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 text-amber-900 dark:text-amber-200 placeholder-amber-300 dark:placeholder-amber-600 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none transition-all"
                 value={adminSecret}
                 onChange={(e) => setAdminSecret(e.target.value)}
               />
-              <p className="text-xs text-amber-600 mt-2 font-medium">
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 font-medium">
                 * Required for administrative privileges.
               </p>
             </div>
           )}
 
-          <button type="submit" className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-slate-200 mt-4">
+          <button type="submit" className="w-full bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-slate-200 dark:shadow-blue-900/20 mt-4">
             Sign Up
           </button>
         </form>
 
-        <p className="text-center mt-8 text-slate-500 text-sm">
-          Already have an account? <Link to="/login" className="text-blue-600 font-bold hover:underline">Log in</Link>
+        <p className="text-center mt-8 text-slate-500 dark:text-slate-400 text-sm">
+          Already have an account? <Link to="/login" className="text-blue-600 dark:text-blue-400 font-bold hover:underline">Log in</Link>
         </p>
 
       </div>

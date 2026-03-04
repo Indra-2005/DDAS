@@ -66,13 +66,13 @@ export default function Profile() {
     if (!profile) return <div className="p-10 text-center text-red-500">Error loading profile.</div>;
 
     return (
-        <div className="min-h-screen bg-slate-50 p-6 md:p-10 font-sans">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 md:p-10 font-sans">
             <div className="max-w-4xl mx-auto space-y-8">
 
                 {/* Header */}
                 <div>
-                    <h1 className="text-3xl font-black text-slate-800 tracking-tight">My Profile</h1>
-                    <p className="text-slate-500 font-medium">Manage your account settings and view usage statistics.</p>
+                    <h1 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">My Profile</h1>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium">Manage your account settings and view usage statistics.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -81,15 +81,15 @@ export default function Profile() {
                     <div className="md:col-span-1 space-y-6">
 
                         {/* User Card */}
-                        <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-200 flex flex-col items-center text-center">
-                            <div className="w-24 h-24 bg-blue-600 text-white rounded-full flex items-center justify-center text-4xl font-black mb-4 shadow-xl shadow-blue-200">
+                        <div className="bg-white dark:bg-slate-900 rounded-[32px] p-8 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col items-center text-center">
+                            <div className="w-24 h-24 bg-blue-600 text-white rounded-full flex items-center justify-center text-4xl font-black mb-4 shadow-xl shadow-blue-200 dark:shadow-blue-900/20">
                                 {profile.username.charAt(0).toUpperCase()}
                             </div>
-                            <h2 className="text-xl font-black text-slate-800">{profile.username}</h2>
-                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold uppercase mt-2">
+                            <h2 className="text-xl font-black text-slate-800 dark:text-white">{profile.username}</h2>
+                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full text-xs font-bold uppercase mt-2">
                                 <Shield className="w-3 h-3" /> {profile.role}
                             </span>
-                            <div className="mt-6 w-full pt-6 border-t border-slate-100 flex justify-between text-xs font-bold text-slate-400">
+                            <div className="mt-6 w-full pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-between text-xs font-bold text-slate-400">
                                 <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Joined</span>
                                 <span>{new Date(profile.joined_at).toLocaleDateString()}</span>
                             </div>
@@ -112,60 +112,60 @@ export default function Profile() {
 
                         {/* Activity Stats */}
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                                <div className="flex items-center gap-3 mb-2 text-emerald-600">
+                            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <div className="flex items-center gap-3 mb-2 text-emerald-600 dark:text-emerald-400">
                                     <FileCheck className="w-5 h-5" />
                                     <span className="font-bold text-sm uppercase">Originals</span>
                                 </div>
-                                <p className="text-3xl font-black text-slate-800">{profile.originals}</p>
+                                <p className="text-3xl font-black text-slate-800 dark:text-white">{profile.originals}</p>
                             </div>
-                            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                                <div className="flex items-center gap-3 mb-2 text-amber-500">
+                            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <div className="flex items-center gap-3 mb-2 text-amber-500 dark:text-amber-400">
                                     <Copy className="w-5 h-5" />
                                     <span className="font-bold text-sm uppercase">Duplicates</span>
                                 </div>
-                                <p className="text-3xl font-black text-slate-800">{profile.duplicates}</p>
+                                <p className="text-3xl font-black text-slate-800 dark:text-white">{profile.duplicates}</p>
                             </div>
                         </div>
 
                         {/* Change Password Form */}
-                        <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm p-8">
+                        <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-sm p-8">
                             <div className="flex items-center gap-3 mb-6">
-                                <div className="p-3 bg-slate-100 rounded-xl text-slate-600">
+                                <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-400">
                                     <Key className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-bold text-slate-800">Security Settings</h3>
+                                    <h3 className="text-lg font-bold text-slate-800 dark:text-white">Security Settings</h3>
                                     <p className="text-slate-400 text-sm">Update your access password.</p>
                                 </div>
                             </div>
 
                             <form onSubmit={submitPasswordChange} className="space-y-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Current Password</label>
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Current Password</label>
                                     <input
                                         type="password" name="current"
                                         value={passwords.current} onChange={handlePassChange}
-                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-700 dark:text-slate-200"
                                         placeholder="••••••••"
                                     />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">New Password</label>
+                                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">New Password</label>
                                         <input
                                             type="password" name="new"
                                             value={passwords.new} onChange={handlePassChange}
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-700 dark:text-slate-200"
                                             placeholder="••••••••"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Confirm New</label>
+                                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Confirm New</label>
                                         <input
                                             type="password" name="confirm"
                                             value={passwords.confirm} onChange={handlePassChange}
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-700 dark:text-slate-200"
                                             placeholder="••••••••"
                                         />
                                     </div>
@@ -175,7 +175,7 @@ export default function Profile() {
                                     <button
                                         type="submit"
                                         disabled={changingPass}
-                                        className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-blue-600 text-white rounded-xl font-bold hover:bg-black dark:hover:bg-blue-700 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {changingPass ? "Updating..." : <><Save className="w-4 h-4" /> Update Password</>}
                                     </button>

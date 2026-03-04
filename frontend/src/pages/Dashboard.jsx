@@ -120,7 +120,7 @@ const Dashboard = () => {
                       <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="[&>line]:stroke-slate-100 dark:[&>line]:stroke-slate-800" stroke="currentColor" />
                   <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
                   <Tooltip
@@ -180,10 +180,10 @@ const Dashboard = () => {
 
 function StatCard({ title, value, icon: Icon, trend, alert, color, delay }) {
   const colorStyles = {
-    blue: "text-blue-600 bg-blue-50/50",
-    amber: "text-amber-600 bg-amber-50/50",
-    emerald: "text-emerald-600 bg-emerald-50/50",
-    violet: "text-violet-600 bg-violet-50/50",
+    blue: "text-blue-600 bg-blue-50/50 dark:text-blue-400 dark:bg-blue-500/20",
+    amber: "text-amber-600 bg-amber-50/50 dark:text-amber-400 dark:bg-amber-500/20",
+    emerald: "text-emerald-600 bg-emerald-50/50 dark:text-emerald-400 dark:bg-emerald-500/20",
+    violet: "text-violet-600 bg-violet-50/50 dark:text-violet-400 dark:bg-violet-500/20",
   };
 
   const activeColor = colorStyles[color] || colorStyles.blue;

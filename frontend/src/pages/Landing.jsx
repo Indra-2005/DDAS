@@ -9,7 +9,7 @@ export default function Landing() {
   const token = localStorage.getItem("ddas_token");
 
   return (
-    <div className="min-h-screen bg-white font-sans text-slate-900 overflow-x-hidden">
+    <div className="min-h-screen bg-white dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 overflow-x-hidden">
 
       { }
       <div className="relative bg-slate-900 text-white">
@@ -64,33 +64,33 @@ export default function Landing() {
       </div>
 
       { }
-      <div className="bg-slate-50 py-20 border-b border-slate-200">
+      <div className="bg-slate-50 dark:bg-slate-900/50 py-20 border-b border-slate-200 dark:border-slate-800">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
 
             {/* Text Side */}
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">Efficiency Meets Security</h2>
-              <p className="text-slate-600 text-lg leading-relaxed mb-6">
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-6">Efficiency Meets Security</h2>
+              <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed mb-6">
                 Redundant data is a critical inefficiency. Copies of the same manuals, reports, and media are uploaded thousands of times, wasting petabytes of storage.
               </p>
-              <p className="text-slate-600 text-lg leading-relaxed mb-8">
+              <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed mb-8">
                 <strong>DDAS</strong> creates a "Single Source of Truth." By detecting duplicates
                 at the moment of upload, we reduce storage costs by up to 60% while maintaining strict access controls.
               </p>
 
               <ul className="space-y-4">
                 <li className="flex items-center gap-3">
-                  <div className="p-1.5 bg-green-100 rounded-full"><ShieldCheck className="w-5 h-5 text-green-600" /></div>
-                  <span className="font-medium text-slate-700">Prevent Redundant Storage</span>
+                  <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-full"><ShieldCheck className="w-5 h-5 text-green-600 dark:text-green-400" /></div>
+                  <span className="font-medium text-slate-700 dark:text-slate-300">Prevent Redundant Storage</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <div className="p-1.5 bg-blue-100 rounded-full"><Database className="w-5 h-5 text-blue-600" /></div>
-                  <span className="font-medium text-slate-700">Centralized Data Management</span>
+                  <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-full"><Database className="w-5 h-5 text-blue-600 dark:text-blue-400" /></div>
+                  <span className="font-medium text-slate-700 dark:text-slate-300">Centralized Data Management</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <div className="p-1.5 bg-amber-100 rounded-full"><Lock className="w-5 h-5 text-amber-600" /></div>
-                  <span className="font-medium text-slate-700">Role-Based Data Privacy</span>
+                  <div className="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-full"><Lock className="w-5 h-5 text-amber-600 dark:text-amber-400" /></div>
+                  <span className="font-medium text-slate-700 dark:text-slate-300">Role-Based Data Privacy</span>
                 </li>
               </ul>
             </div>
@@ -101,9 +101,9 @@ export default function Landing() {
               <div className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-2xl transform rotate-3 scale-105 opacity-20 blur-xl"></div>
 
               {/* Card Container */}
-              <div className="relative bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-slate-100">
+              <div className="relative bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="font-bold text-slate-500 text-xs uppercase tracking-wider">Live System Monitor</h3>
+                  <h3 className="font-bold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">Live System Monitor</h3>
                   <span className="flex h-2 w-2 relative">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -112,34 +112,34 @@ export default function Landing() {
 
                 <div className="space-y-3">
                   {/* Item 1 */}
-                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                  <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
                     <div className="flex items-center gap-3 overflow-hidden">
                       <FileText className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                      <span className="font-semibold text-slate-700 text-sm truncate">Manual_v1.pdf</span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-200 text-sm truncate">Manual_v1.pdf</span>
                     </div>
-                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full flex items-center gap-1">
+                    <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold rounded-full flex items-center gap-1">
                       <CheckCircle className="w-3 h-3" /> UNIQUE
                     </span>
                   </div>
 
                   {/* Item 2 */}
-                  <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-100">
+                  <div className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-100 dark:border-amber-800/30">
                     <div className="flex items-center gap-3 overflow-hidden">
                       <FileText className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                      <span className="font-semibold text-slate-700 text-sm truncate">Manual_Copy.pdf</span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-200 text-sm truncate">Manual_Copy.pdf</span>
                     </div>
-                    <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full flex items-center gap-1">
+                    <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-bold rounded-full flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3" /> BLOCKED
                     </span>
                   </div>
 
                   {/* Item 3 */}
-                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                  <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
                     <div className="flex items-center gap-3 overflow-hidden">
                       <FileText className="w-5 h-5 text-purple-500 flex-shrink-0" />
-                      <span className="font-semibold text-slate-700 text-sm truncate">Project_Alpha.docx</span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-200 text-sm truncate">Project_Alpha.docx</span>
                     </div>
-                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full flex items-center gap-1">
+                    <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold rounded-full flex items-center gap-1">
                       <CheckCircle className="w-3 h-3" /> UNIQUE
                     </span>
                   </div>
@@ -154,8 +154,8 @@ export default function Landing() {
       { }
       <div className="max-w-7xl mx-auto px-6 py-20">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-slate-900">How It Works</h2>
-          <p className="text-slate-500 mt-2">Intelligent hashing in milliseconds.</p>
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">How It Works</h2>
+          <p className="text-slate-500 dark:text-slate-400 mt-2">Intelligent hashing in milliseconds.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -191,12 +191,12 @@ export default function Landing() {
 
 function FeatureCard({ icon: Icon, title, desc }) {
   return (
-    <div className="p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-      <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
-        <Icon className="w-7 h-7 text-slate-700 group-hover:text-white transition-colors" />
+    <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+      <div className="w-14 h-14 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
+        <Icon className="w-7 h-7 text-slate-700 dark:text-slate-300 group-hover:text-white transition-colors" />
       </div>
-      <h3 className="text-xl font-bold text-slate-900 mb-3">{title}</h3>
-      <p className="text-slate-500 leading-relaxed text-sm">
+      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{title}</h3>
+      <p className="text-slate-500 dark:text-slate-400 leading-relaxed text-sm">
         {desc}
       </p>
     </div>

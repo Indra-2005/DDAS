@@ -153,15 +153,37 @@ export default function Upload() {
 
           {result && (
             <div className="text-center py-6">
-              <div className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-lg ${result.is_duplicate ? "bg-amber-100 text-amber-600" : "bg-emerald-100 text-emerald-600"
-                }`}>
-                {result.is_duplicate ? <AlertTriangle className="w-10 h-10" /> : <CheckCircle className="w-10 h-10" />}
+              <div className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-lg ${
+                result.is_duplicate
+                  ? "bg-amber-100 text-amber-600"
+                  : result.is_near_duplicate
+                  ? "bg-purple-100 text-purple-600"
+                  : "bg-emerald-100 text-emerald-600"
+              }`}>
+                {result.is_duplicate || result.is_near_duplicate
+                  ? <AlertTriangle className="w-10 h-10" />
+                  : <CheckCircle className="w-10 h-10" />}
               </div>
-              <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">{result.is_duplicate ? "Duplicate Detected!" : "Upload Successful!"}</h2>
-              <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-8">
-                {result.is_duplicate ? "System found an existing copy. Linked to save space." : "File securely hashed and stored."}
+              <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">
+                {result.is_duplicate
+                  ? "Duplicate Detected!"
+                  : result.is_near_duplicate
+                  ? "Near Duplicate Detected!"
+                  : "Upload Successful!"}
+              </h2>
+              <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-2">
+                {result.is_duplicate
+                  ? "System found an existing copy. Linked to save space."
+                  : result.is_near_duplicate
+                  ? "File content is highly similar to an existing file (different order or minor changes)."
+                  : "File securely hashed and stored."}
               </p>
-              <div className="flex flex-wrap justify-center gap-4">
+              {result.is_near_duplicate && result.similarity_score > 0 && (
+                <div className="inline-flex items-center gap-2 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 text-purple-700 dark:text-purple-300 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
+                  <span>Jaccard Similarity: {result.similarity_score}%</span>
+                </div>
+              )}
+              <div className="flex flex-wrap justify-center gap-4 mt-4">
                 <button onClick={removeFile} className="px-6 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-semibold">Upload Another</button>
                 <button onClick={() => navigate("/files")} className="px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold">View Files</button>
               </div>

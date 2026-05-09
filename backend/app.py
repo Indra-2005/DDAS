@@ -1,7 +1,17 @@
 import os
 import shutil
 import hashlib
+import re
 import io
+import numpy
+import docx
+import openpyxl
+import xlrd
+from pptx import Presentation
+from striprtf.striprtf import rtf_to_text
+import fitz  # PyMuPDF — superior LaTeX/Type1 font PDF extraction
+from PyPDF2 import PdfReader  # fallback for edge cases
+from datasketch import MinHash
 from datetime import datetime, timedelta
 from fastapi.responses import FileResponse, JSONResponse 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, Request
@@ -185,44 +195,216 @@ async def change_password(
     
     return {"msg": "Password updated successfully"}
 
+# --- Near-Duplicate Detection via LSH (MinHash + Jaccard Similarity) ---
+NEAR_DUP_THRESHOLD = 0.8   # 80% Jaccard similarity = near duplicate
+MINHASH_NUM_PERM = 128     # number of hash permutations (higher = more accurate)
+
+# File types supported for text extraction (near-dup detection)
+# Binary-only types (images, executables, etc.) are intentionally skipped
+TEXT_EXTRACTABLE = {
+    '.txt', '.csv', '.json', '.xml', '.html', '.htm', '.md',
+    '.log', '.yaml', '.yml', '.ini', '.cfg', '.toml',
+    '.pdf', '.docx', '.xlsx', '.xls', '.pptx', '.rtf'
+}
+
+def extract_text(file_bytes: bytes, filename: str) -> str:
+    """Extract plain text from all supported file types for near-duplicate analysis."""
+    ext = os.path.splitext(filename.lower())[1]
+    
+    # Skip binary-only file types upfront (images, executables, archives, etc.)
+    if ext not in TEXT_EXTRACTABLE:
+        print(f"[extract_text] Skipping binary/unsupported type: {filename}")
+        return ""
+
+    try:
+        # --- PDF ---
+        if ext == '.pdf':
+            # Primary: PyMuPDF — handles LaTeX/Type1 fonts, ligatures, custom CMaps
+            try:
+                doc = fitz.open(stream=file_bytes, filetype="pdf")
+                parts = []
+                for page in doc:
+                    text = page.get_text("text")  # plain text, preserves ligatures
+                    if text.strip():
+                        parts.append(text)
+                doc.close()
+                extracted = " ".join(parts).strip()
+                if extracted:
+                    print(f"[PDF] PyMuPDF extracted {len(extracted)} chars from {filename}")
+                    return extracted
+                print(f"[PDF] PyMuPDF returned empty text for {filename}, trying PyPDF2 fallback")
+            except Exception as e:
+                print(f"[PDF] PyMuPDF failed for {filename}: {e}, trying PyPDF2 fallback")
+            # Fallback: PyPDF2
+            pdf = PdfReader(io.BytesIO(file_bytes))
+            parts = [p.extract_text() for p in pdf.pages if p.extract_text()]
+            return " ".join(parts)
+
+        # --- DOCX (Word) ---
+        elif ext == '.docx':
+            doc = docx.Document(io.BytesIO(file_bytes))
+            parts = [para.text for para in doc.paragraphs if para.text.strip()]
+            # Also extract text from tables inside the doc
+            for table in doc.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        if cell.text.strip():
+                            parts.append(cell.text)
+            return " ".join(parts)
+
+        # --- XLSX (Excel) ---
+        elif ext == '.xlsx':
+            wb = openpyxl.load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
+            parts = []
+            for ws in wb.worksheets:
+                for row in ws.iter_rows(values_only=True):
+                    for cell in row:
+                        if cell is not None:
+                            parts.append(str(cell))
+            return " ".join(parts)
+
+        # --- XLS (Legacy Excel) ---
+        elif ext == '.xls':
+            wb = xlrd.open_workbook(file_contents=file_bytes)
+            parts = []
+            for sheet in wb.sheets():
+                for row in range(sheet.nrows):
+                    for col in range(sheet.ncols):
+                        val = sheet.cell_value(row, col)
+                        if val:
+                            parts.append(str(val))
+            return " ".join(parts)
+
+        # --- PPTX (PowerPoint) ---
+        elif ext == '.pptx':
+            prs = Presentation(io.BytesIO(file_bytes))
+            parts = []
+            for slide in prs.slides:
+                for shape in slide.shapes:
+                    if hasattr(shape, 'text') and shape.text.strip():
+                        parts.append(shape.text)
+            return " ".join(parts)
+
+        # --- RTF ---
+        elif ext == '.rtf':
+            raw = file_bytes.decode('latin-1', errors='replace')
+            return rtf_to_text(raw)
+
+        # --- Generic text types (txt, csv, json, xml, html, md, log, etc.) ---
+        else:
+            try:
+                raw = file_bytes.decode('utf-8')
+            except UnicodeDecodeError:
+                raw = file_bytes.decode('latin-1', errors='replace')
+            
+            # For XML/HTML/HTM: strip all tags so only the text content is compared
+            if ext in ('.xml', '.html', '.htm'):
+                raw = re.sub(r'<[^>]+>', ' ', raw)
+            
+            return raw
+
+    except Exception as e:
+        print(f"[Text Extraction Error] {filename} ({ext}): {e}")
+        return ""
+
+def build_minhash(text: str) -> MinHash | None:
+    """Build a MinHash signature from the UNIQUE word set in the text.
+    
+    - Lowercases all words
+    - Strips punctuation (so JSON quotes, XML tags, CSV commas don't pollute)
+    - Uses a SET of words (deduplicates), so repeated words don't skew Jaccard similarity
+    """
+    # Strip punctuation, lowercase, split into words
+    cleaned = re.sub(r'[^\w\s]', '', text.lower())
+    word_set = set(cleaned.split())     # SET: order-independent, no duplicates
+    word_set.discard('')                # remove any empty strings
+    if not word_set:
+        return None
+    m = MinHash(num_perm=MINHASH_NUM_PERM)
+    for word in word_set:
+        m.update(word.encode('utf-8'))
+    return m
+
+def jaccard_from_stored(m: MinHash, stored_hashvalues: list) -> float:
+    """Reconstruct a MinHash from stored values and compute Jaccard similarity."""
+    m2 = MinHash(num_perm=MINHASH_NUM_PERM)
+    m2.hashvalues = numpy.array(stored_hashvalues, dtype='uint64')
+    return m.jaccard(m2)
+
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
     temp_path = os.path.join(STORAGE_DIR, f"temp_{file.filename}")
     sha256_hash = hashlib.sha256()
     
     try:
+        file_bytes_list = []
         with open(temp_path, "wb") as buffer:
             while True:
-                chunk = await file.read(1024 * 1024) 
+                chunk = await file.read(1024 * 1024)
                 if not chunk:
                     break
                 buffer.write(chunk)
                 sha256_hash.update(chunk)
+                file_bytes_list.append(chunk)
         
         file_hash = sha256_hash.hexdigest()
+        file_bytes = b"".join(file_bytes_list)
         final_path = os.path.join(STORAGE_DIR, file_hash)
 
+        is_duplicate = False
+        is_near_duplicate = False
+        minhash_values = None
+        similarity_score = 0.0
+
         if os.path.exists(final_path):
+            # --- Exact duplicate: file already stored on disk ---
             is_duplicate = True
             os.remove(temp_path)
         else:
-            is_duplicate = False
             shutil.move(temp_path, final_path)
+
+            # --- LSH Near-Duplicate Check ---
+            text = extract_text(file_bytes, file.filename)
+            minhash = build_minhash(text)
+
+            if minhash is not None:
+                minhash_values = minhash.hashvalues.tolist()
+                # Compare against all previously stored MinHash signatures
+                for existing in files_collection.find(
+                    {"minhash_values": {"$exists": True}, "is_duplicate": False},
+                    {"minhash_values": 1}
+                ):
+                    stored = existing.get("minhash_values")
+                    if stored and len(stored) == MINHASH_NUM_PERM:
+                        sim = jaccard_from_stored(minhash, stored)
+                        if sim >= NEAR_DUP_THRESHOLD:
+                            is_near_duplicate = True
+                            similarity_score = round(sim * 100, 2)
+                            break
 
         files_collection.insert_one({
             "filename": file.filename,
             "owner": current_user["username"],
             "hash": file_hash,
+            "minhash_values": minhash_values,
             "size": os.path.getsize(final_path),
             "upload_date": datetime.utcnow(),
             "is_duplicate": is_duplicate,
-            "file_path": final_path 
+            "is_near_duplicate": is_near_duplicate,
+            "similarity_score": similarity_score,
+            "file_path": final_path
         })
-        
 
-        
-        log_activity(current_user["username"], "UPLOAD", f"Uploaded {file.filename} (Duplicate: {is_duplicate})")
-        return {"status": "Uploaded", "is_duplicate": is_duplicate}
+        log_activity(
+            current_user["username"], "UPLOAD",
+            f"Uploaded {file.filename} (Duplicate: {is_duplicate}, Near Duplicate: {is_near_duplicate}, Similarity: {similarity_score}%)"
+        )
+        return {
+            "status": "Uploaded",
+            "is_duplicate": is_duplicate,
+            "is_near_duplicate": is_near_duplicate,
+            "similarity_score": similarity_score
+        }
 
     except Exception as e:
         if os.path.exists(temp_path):
@@ -310,6 +492,7 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     return {
         "total_files": len(all_files),
         "duplicates": sum(1 for f in all_files if f.get("is_duplicate")),
+        "near_duplicates": sum(1 for f in all_files if f.get("is_near_duplicate")),
         "storage_used": format_bytes(total_size),
         "storage_saved": format_bytes(saved_size),
         "recent_activity": chart_data,

@@ -152,6 +152,8 @@ export default function Files() {
                         <td className="px-6 py-4">
                           {file.is_duplicate ? (
                             <span className="text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded text-xs font-bold border border-amber-100 dark:border-amber-800/30">Duplicate</span>
+                          ) : file.is_near_duplicate ? (
+                            <span className="text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 px-2 py-1 rounded text-xs font-bold border border-purple-100 dark:border-purple-800/30">Near Duplicate</span>
                           ) : (
                             <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded text-xs font-bold border border-emerald-100 dark:border-emerald-800/30">Unique</span>
                           )}
@@ -192,6 +194,8 @@ export default function Files() {
                     </div>
                     {file.is_duplicate ? (
                       <span className="text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded text-[10px] font-bold border border-amber-100 dark:border-amber-800/30">Duplicate</span>
+                    ) : file.is_near_duplicate ? (
+                      <span className="text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 px-2 py-1 rounded text-[10px] font-bold border border-purple-100 dark:border-purple-800/30">Near Duplicate</span>
                     ) : (
                       <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded text-[10px] font-bold border border-emerald-100 dark:border-emerald-800/30">Unique</span>
                     )}

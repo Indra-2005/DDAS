@@ -93,10 +93,10 @@ const Dashboard = () => {
             delay="200"
           />
           <StatCard
-            title="Server Status"
-            value="Active"
+            title="Near Duplicates"
+            value={stats.near_duplicates || 0}
             icon={Activity}
-            trend="99.9% Uptime"
+            trend="Semantically similar"
             color="violet"
             delay="300"
           />

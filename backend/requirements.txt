@@ -7,3 +7,12 @@ python-jose[cryptography]
 python-multipart
 simhash
 aiofiles
+pymupdf
+PyPDF2
+python-docx
+datasketch
+scipy
+openpyxl
+python-pptx
+xlrd
+striprtf

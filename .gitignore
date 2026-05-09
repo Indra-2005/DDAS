@@ -54,3 +54,6 @@ Desktop.ini
 # --- LOGS ---
 logs/
 *.log
+
+# --- SFDX ---
+.sfdx/

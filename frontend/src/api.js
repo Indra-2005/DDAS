@@ -1,10 +1,19 @@
+/**
+ * @file api.js
+ * @description Centralized Axios HTTP client for all frontend-to-backend communication.
+ *
+ * - Dynamically determines the API base URL (supports localhost, LAN IPs for mobile testing).
+ * - Attaches JWT Bearer tokens to every outgoing request via an Axios request interceptor.
+ * - Handles 401 Unauthorized responses globally by clearing tokens and redirecting to login.
+ * - Supports both HashRouter (Electron) and BrowserRouter (web) redirect strategies.
+ */
 import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
 
 // Dynamically determine API URL to allow mobile access
 // If accessing from a network IP (e.g. 192.168.x.x), assume backend is on the same host at port 8000
-const dynamicBaseURL = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
+const dynamicBaseURL = window.location.hostname && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
   ? `http://${window.location.hostname}:8000`
   : API_BASE;
 
@@ -23,7 +32,12 @@ API.interceptors.response.use(
     if (error.response) {
       if (error.response.status === 401 && !error.config.url.includes("/login")) {
         localStorage.removeItem("ddas_token");
-        window.location.href = "/login";
+        // Maintain HashRouter compatibility for Electron, fall back to standard URL for web
+        if (window.electronAPI && window.electronAPI.isElectron) {
+          window.location.hash = "#/login";
+        } else {
+          window.location.href = "/login";
+        }
       } else {
         console.error(`API Error ${error.response.status}:`, error.response.data?.detail || error.message);
       }

@@ -1,9 +1,19 @@
+/**
+ * @file Profile.jsx
+ * @description User profile page showing account details, password change form,
+ * personal storage statistics, and API encryption key fingerprint.
+ */
 import React, { useEffect, useState } from "react";
 import API from "../api";
-import { User, Key, Save, HardDrive, FileText, Copy, Shield, Calendar } from "lucide-react";
+import { User, Key, Save, HardDrive, Calendar, Lock, CheckCircle, Cloud, Shield, Copy } from "lucide-react";
 import toast from "react-hot-toast";
 import { ProfileSkeleton } from "../components/Skeleton";
 
+/**
+ * User Profile Component.
+ * Allows users to view their account details, usage limits, and update their password.
+ * @returns {JSX.Element} The Profile page layout.
+ */
 export default function Profile() {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -62,136 +72,242 @@ export default function Profile() {
         }
     };
 
+    const getStoragePercent = () => {
+        if (!profile || !profile.storage_used) return 1;
+        const num = parseFloat(profile.storage_used);
+        if (isNaN(num)) return 2;
+        const valLower = profile.storage_used.toLowerCase();
+        if (valLower.includes("gb")) {
+            return Math.min(100, (num / 10) * 100);
+        }
+        if (valLower.includes("mb")) {
+            return Math.min(100, (num / 1024) * 100);
+        }
+        if (valLower.includes("kb")) {
+            return 1;
+        }
+        return 1;
+    };
+
     if (loading) return <ProfileSkeleton />;
-    if (!profile) return <div className="p-10 text-center text-red-500">Error loading profile.</div>;
+    if (!profile) return <div className="p-10 text-center text-red-500 font-bold">Error loading profile.</div>;
+
+    const storagePercent = getStoragePercent();
+    const isAdmin = profile.role?.toLowerCase() === "admin";
+
+    const inputClasses = "w-full pl-10 pr-4 py-3 bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/40 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all font-medium text-sm text-slate-700 dark:text-white placeholder-slate-400";
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 md:p-10 font-sans">
-            <div className="max-w-4xl mx-auto space-y-8">
+        <div className="p-6 md:p-10 max-w-4xl mx-auto min-h-screen bg-slate-50 dark:bg-[#0a0f1e] font-sans relative overflow-hidden page-enter">
+            {/* Subtle background brand glow */}
+            <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-blue-500/[0.02] dark:bg-blue-500/[0.01] blur-3xl pointer-events-none" />
 
-                {/* Header */}
+            {/* Header */}
+            <div className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200/60 dark:border-slate-700/30 pb-8">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">My Profile</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium">Manage your account settings and view usage statistics.</p>
+                    <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-3 tracking-tight">
+                        <User className="w-7 h-7 text-blue-500" />
+                        My Profile Settings
+                    </h1>
+                    <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">
+                        View active system storage allocation, manage account credentials, and review user statistics.
+                    </p>
                 </div>
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
 
-                    {/* Left Column: User Card & Stats */}
-                    <div className="md:col-span-1 space-y-6">
+                {/* Left Panel */}
+                <div className="md:col-span-1 space-y-7">
 
-                        {/* User Card */}
-                        <div className="bg-white dark:bg-slate-900 rounded-[32px] p-8 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col items-center text-center">
-                            <div className="w-24 h-24 bg-blue-600 text-white rounded-full flex items-center justify-center text-4xl font-black mb-4 shadow-xl shadow-blue-200 dark:shadow-blue-900/20">
-                                {profile.username.charAt(0).toUpperCase()}
-                            </div>
-                            <h2 className="text-xl font-black text-slate-800 dark:text-white">{profile.username}</h2>
-                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full text-xs font-bold uppercase mt-2">
-                                <Shield className="w-3 h-3" /> {profile.role}
-                            </span>
-                            <div className="mt-6 w-full pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-between text-xs font-bold text-slate-400">
-                                <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Joined</span>
-                                <span>{new Date(profile.joined_at).toLocaleDateString()}</span>
-                            </div>
-                        </div>
-
-                        {/* Storage Stat */}
-                        <div className="bg-indigo-900 rounded-[32px] p-8 shadow-lg text-white relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-8 opacity-10"><HardDrive className="w-32 h-32" /></div>
-                            <p className="text-indigo-200 font-bold text-sm uppercase tracking-wider mb-1">Storage Used</p>
-                            <p className="text-4xl font-black">{profile.storage_used}</p>
-                            <div className="mt-4 h-2 bg-indigo-800 rounded-full overflow-hidden">
-                                <div className="h-full bg-indigo-400 w-1/12"></div> {/* Mock progress */}
+                    {/* Profile avatar card */}
+                    <div className="glass-card p-8 flex flex-col items-center text-center relative overflow-hidden">
+                        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600" />
+                        
+                        {/* Gradient-Ringed Avatar */}
+                        <div className="relative mb-6 p-[3px] bg-gradient-to-tr from-blue-600 via-indigo-500 to-purple-600 rounded-full shadow-lg shadow-indigo-500/15 transition-transform duration-300 hover:scale-[1.03]">
+                            <div className="w-24 h-24 bg-white dark:bg-[#0a0f1e] rounded-full p-1">
+                                <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 dark:from-slate-700 dark:to-slate-800 text-white rounded-full flex items-center justify-center text-4xl font-extrabold">
+                                    {profile.username.charAt(0).toUpperCase()}
+                                </div>
                             </div>
                         </div>
 
+                        <h2 className="text-xl font-extrabold text-slate-800 dark:text-white">
+                            {profile.username}
+                        </h2>
+
+                        <div className="mt-4">
+                            {isAdmin ? (
+                                <span className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-full text-[10px] font-black uppercase tracking-wider">
+                                    <Shield className="w-3.5 h-3.5" /> Workspace Admin
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-full text-[10px] font-black uppercase tracking-wider">
+                                    <User className="w-3.5 h-3.5" /> Team Employee
+                                </span>
+                            )}
+                        </div>
+
+                        <div className="w-full mt-8 pt-6 border-t border-slate-100 dark:border-slate-700/30 flex justify-between text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                            <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> Joined On</span>
+                            <span className="text-slate-700 dark:text-slate-300 font-extrabold">{new Date(profile.joined_at).toLocaleDateString()}</span>
+                        </div>
                     </div>
 
-                    {/* Right Column: Details & Settings */}
-                    <div className="md:col-span-2 space-y-6">
-
-                        {/* Activity Stats */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                <div className="flex items-center gap-3 mb-2 text-emerald-600 dark:text-emerald-400">
-                                    <FileCheck className="w-5 h-5" />
-                                    <span className="font-bold text-sm uppercase">Originals</span>
-                                </div>
-                                <p className="text-3xl font-black text-slate-800 dark:text-white">{profile.originals}</p>
+                    {/* Storage progress card */}
+                    <div className="glass-card p-7">
+                        <div className="flex items-center gap-3.5 mb-5 border-b border-slate-100 dark:border-slate-700/30 pb-4">
+                            <div className="p-2 bg-blue-50 dark:bg-blue-500/10 text-blue-500 rounded-xl">
+                                <Cloud className="w-5 h-5" />
                             </div>
-                            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                <div className="flex items-center gap-3 mb-2 text-amber-500 dark:text-amber-400">
-                                    <Copy className="w-5 h-5" />
-                                    <span className="font-bold text-sm uppercase">Duplicates</span>
+                            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">Disk Quota</h3>
+                        </div>
+
+                        <div>
+                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Storage Used</p>
+                            <p className="text-3xl font-extrabold mt-1 tracking-tight text-slate-800 dark:text-white">{profile.storage_used || "0 Bytes"}</p>
+                            
+                            <div className="mt-8">
+                                <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2.5">
+                                    <span>Disk Consumption</span>
+                                    <span>{Math.round(storagePercent)}%</span>
                                 </div>
-                                <p className="text-3xl font-black text-slate-800 dark:text-white">{profile.duplicates}</p>
+                                <div className="h-3 bg-slate-100 dark:bg-slate-800/60 rounded-full border border-slate-200/30 dark:border-slate-700/20 overflow-hidden">
+                                    <div 
+                                        className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-1000 ease-out"
+                                        style={{ width: `${storagePercent}%` }}
+                                    />
+                                </div>
+                                <div className="mt-4 flex items-center justify-between text-[10px] font-bold text-slate-400">
+                                    <span>0 MB</span>
+                                    <span>Limit: 10 GB</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                {/* Right Panel */}
+                <div className="md:col-span-2 space-y-7">
+
+                    {/* Stats Box Grids */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="glass-card p-6 flex items-center gap-4 card-hover group">
+                            <div className="p-3.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 rounded-2xl border border-emerald-100/50 dark:border-emerald-500/10 group-hover:scale-110 transition-transform duration-500">
+                                <CheckCircle className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Validated Originals</p>
+                                <p className="text-3xl font-extrabold text-slate-800 dark:text-white mt-0.5 tracking-tight">{profile.originals || 0}</p>
                             </div>
                         </div>
 
-                        {/* Change Password Form */}
-                        <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-sm p-8">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-400">
-                                    <Key className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-bold text-slate-800 dark:text-white">Security Settings</h3>
-                                    <p className="text-slate-400 text-sm">Update your access password.</p>
-                                </div>
+                        <div className="glass-card p-6 flex items-center gap-4 card-hover group">
+                            <div className="p-3.5 bg-amber-50 dark:bg-amber-500/10 text-amber-500 rounded-2xl border border-amber-100/50 dark:border-amber-500/10 group-hover:scale-110 transition-transform duration-500">
+                                <Copy className="w-6 h-6" />
                             </div>
+                            <div>
+                                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Identified Duplicates</p>
+                                <p className="text-3xl font-extrabold text-slate-800 dark:text-white mt-0.5 tracking-tight">{profile.duplicates || 0}</p>
+                            </div>
+                        </div>
+                    </div>
 
-                            <form onSubmit={submitPasswordChange} className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Current Password</label>
+                    {/* Security Update Form */}
+                    <div className="glass-card p-7 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-blue-600 via-indigo-500 to-transparent" />
+                        <div className="flex items-center gap-3.5 mb-8 border-b border-slate-100 dark:border-slate-700/30 pb-5">
+                            <div className="p-2.5 bg-blue-50 dark:bg-blue-500/10 text-blue-500 rounded-xl">
+                                <Key className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Access Credentials</h3>
+                                <p className="text-slate-400 dark:text-slate-500 text-xs mt-0.5">Modify your account authorization credentials securely.</p>
+                            </div>
+                        </div>
+
+                        <form onSubmit={submitPasswordChange} className="space-y-5">
+                            
+                            {/* Current Password */}
+                            <div>
+                                <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2.5 ml-1">Current Password</label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                        <Lock className="w-4 h-4" />
+                                    </div>
                                     <input
                                         type="password" name="current"
                                         value={passwords.current} onChange={handlePassChange}
-                                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-700 dark:text-slate-200"
+                                        required
+                                        className={inputClasses}
                                         placeholder="••••••••"
                                     />
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">New Password</label>
-                                        <input
-                                            type="password" name="new"
-                                            value={passwords.new} onChange={handlePassChange}
-                                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-700 dark:text-slate-200"
-                                            placeholder="••••••••"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Confirm New</label>
-                                        <input
-                                            type="password" name="confirm"
-                                            value={passwords.confirm} onChange={handlePassChange}
-                                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-700 dark:text-slate-200"
-                                            placeholder="••••••••"
-                                        />
-                                    </div>
-                                </div>
+                            </div>
 
-                                <div className="pt-4 flex justify-end">
-                                    <button
-                                        type="submit"
-                                        disabled={changingPass}
-                                        className="flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-blue-600 text-white rounded-xl font-bold hover:bg-black dark:hover:bg-blue-700 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {changingPass ? "Updating..." : <><Save className="w-4 h-4" /> Update Password</>}
-                                    </button>
+                            {/* New Password */}
+                            <div>
+                                <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2.5 ml-1">New Password</label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                        <Key className="w-4 h-4" />
+                                    </div>
+                                    <input
+                                        type="password" name="new"
+                                        value={passwords.new} onChange={handlePassChange}
+                                        required
+                                        className={inputClasses}
+                                        placeholder="Enter new password (at least 6 characters)"
+                                    />
                                 </div>
-                            </form>
-                        </div>
+                            </div>
 
+                            {/* Confirm Password */}
+                            <div>
+                                <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2.5 ml-1">Confirm New Password</label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                        <Key className="w-4 h-4" />
+                                    </div>
+                                    <input
+                                        type="password" name="confirm"
+                                        value={passwords.confirm} onChange={handlePassChange}
+                                        required
+                                        className={inputClasses}
+                                        placeholder="Repeat new password to confirm"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="pt-5 flex justify-end border-t border-slate-100 dark:border-slate-700/30">
+                                <button
+                                    type="submit"
+                                    disabled={changingPass}
+                                    className="btn-primary text-xs uppercase tracking-wider flex items-center gap-2.5 disabled:opacity-50 disabled:pointer-events-none"
+                                >
+                                    {changingPass ? (
+                                        <>
+                                            <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                            </svg>
+                                            <span>Saving settings...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save className="w-4 h-4" />
+                                            <span>Save Password</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
                     </div>
+
                 </div>
             </div>
         </div>
     );
-}
-
-function FileCheck({ className }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><path d="m9 15 2 2 4-4" /></svg>
-    )
 }

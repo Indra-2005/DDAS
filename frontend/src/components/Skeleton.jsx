@@ -1,3 +1,8 @@
+/**
+ * @file Skeleton.jsx
+ * @description Loading skeleton placeholder components. Exports: Skeleton, TableRowSkeleton,
+ * TableSkeleton, CardSkeleton, DashboardSkeleton, and ProfileSkeleton.
+ */
 import React from 'react';
 
 // Basic Pulse Animation Component

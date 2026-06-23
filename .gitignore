@@ -57,3 +57,7 @@ logs/
 
 # --- SFDX ---
 .sfdx/
+
+# --- DESKTOP APP COMPLETE ISOLATION ---
+desktop_app/
+frontend/dist-electron/

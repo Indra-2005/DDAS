@@ -1,3 +1,9 @@
+/**
+ * @file ThemeContext.jsx
+ * @description React Context provider for application-wide light/dark theme management.
+ * Persists the user's preference to localStorage under the key "ddas_theme" and
+ * toggles the "dark" class on the document root element for Tailwind CSS dark mode.
+ */
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 const ThemeContext = createContext();

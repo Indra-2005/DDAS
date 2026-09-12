@@ -22,9 +22,11 @@ export default function ActivityLogs() {
         setLoading(true);
         try {
             const res = await API.get("/admin/logs");
-            setLogs(res.data);
+            const list = Array.isArray(res.data) ? res.data : (res.data?.items || []);
+            setLogs(list);
         } catch (err) {
             toast.error("Failed to load logs. Admin access required.");
+            setLogs([]);
         } finally {
             setLoading(false);
         }
@@ -42,7 +44,8 @@ export default function ActivityLogs() {
         }
     };
 
-    const filteredLogs = logs.filter(log =>
+    const logList = Array.isArray(logs) ? logs : [];
+    const filteredLogs = logList.filter(log =>
         (log.username && log.username.toLowerCase().includes(filter.toLowerCase())) ||
         (log.action && log.action.toLowerCase().includes(filter.toLowerCase()))
     );

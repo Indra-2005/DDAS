@@ -12,14 +12,17 @@ import App from './App.jsx'
 import './index.css'
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "./context/ThemeContext";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <ThemeProvider>
-      <Toaster position="top-right" />
-      <HashRouter>
-        <App />
-      </HashRouter>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <Toaster position="top-right" />
+        <HashRouter>
+          <App />
+        </HashRouter>
+      </ThemeProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );

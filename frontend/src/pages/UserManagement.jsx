@@ -30,7 +30,8 @@ export default function UserManagement() {
       const res = await API.get("/admin/users", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setUsers(res.data);
+      const list = Array.isArray(res.data) ? res.data : (res.data?.items || []);
+      setUsers(list);
       
       const codeRes = await API.get("/admin/invite-code", {
         headers: { Authorization: `Bearer ${token}` }
@@ -39,6 +40,7 @@ export default function UserManagement() {
     } catch (err) {
       console.error("Error fetching data:", err);
       toast.error("Failed to load user information");
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -48,7 +50,8 @@ export default function UserManagement() {
     fetchUsers(); 
   }, []);
 
-  const filteredUsers = users.filter(user =>
+  const userList = Array.isArray(users) ? users : [];
+  const filteredUsers = userList.filter(user =>
     user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
 

@@ -56,7 +56,25 @@ const Dashboard = () => {
 
   if (loading) return <DashboardSkeleton />;
 
-  if (!stats) return null;
+  if (!stats) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
+        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 mb-4">
+          <AlertTriangle className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Unable to Load Analytics</h2>
+        <p className="text-slate-500 dark:text-slate-400 text-sm max-w-md mb-6">
+          Could not retrieve system statistics from the backend server.
+        </p>
+        <button
+          onClick={fetchStats}
+          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl shadow-md transition-all cursor-pointer"
+        >
+          <RefreshCw className="w-4 h-4" /> Retry
+        </button>
+      </div>
+    );
+  }
 
   const topHoarders = stats.top_hoarders || [];
   const dlpTrends = stats.dlp_trends || [];

@@ -4,11 +4,7 @@ import random
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
-load_dotenv()
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-
-client = MongoClient(MONGO_URI)
-db = client["ddas_db"]
+from app.db.database import db, companies_collection
 
 def generate_invite_code(length=8):
     chars = string.ascii_uppercase + string.digits

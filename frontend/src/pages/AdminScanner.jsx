@@ -81,9 +81,11 @@ export default function AdminScanner() {
     try {
       setLoading(true);
       const res = await API.get("/admin/global-duplicates");
-      setDuplicates(res.data);
+      const list = Array.isArray(res.data) ? res.data : (res.data?.duplicates || []);
+      setDuplicates(list);
     } catch (err) {
       setError("Access Denied: You must be an Admin to view this page.");
+      setDuplicates([]);
     } finally {
       setLoading(false);
     }
@@ -93,9 +95,11 @@ export default function AdminScanner() {
     try {
       setQuarantineLoading(true);
       const res = await API.get("/admin/quarantined-files");
-      setQuarantined(res.data);
+      const list = Array.isArray(res.data) ? res.data : (res.data?.items || []);
+      setQuarantined(list);
     } catch (err) {
       console.error("Failed to fetch quarantined files", err);
+      setQuarantined([]);
     } finally {
       setQuarantineLoading(false);
     }
@@ -414,7 +418,7 @@ export default function AdminScanner() {
                 <Loader2 className="w-10 h-10 text-red-505 animate-spin" />
                 <p className="font-semibold text-slate-505">Scanning quarantine registry...</p>
               </div>
-            ) : quarantined.length === 0 ? (
+            ) : (!Array.isArray(quarantined) || quarantined.length === 0) ? (
               <div className="glass-card p-16 text-center">
                 <div className="w-14 h-14 rounded-full bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-6">
                   <CheckCircle className="w-8 h-8" />
@@ -435,7 +439,7 @@ export default function AdminScanner() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
-                  {quarantined.map((file) => (
+                  {(Array.isArray(quarantined) ? quarantined : []).map((file) => (
                     <div key={file._id} className="glass-card p-5 hover:border-red-500/30 dark:hover:border-red-500/25 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                       <div className="flex items-start gap-4">
                         <div className="p-3 bg-red-500/10 text-red-505 rounded-xl border border-red-500/10">

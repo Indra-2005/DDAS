@@ -26,6 +26,7 @@ const MicrosoftIcon = () => (
     <path d="M11 11h10v10H11z" fill="#ffb900"/>
   </svg>
 );
+
 const isElectron = !!(window.electronAPI && window.electronAPI.isElectron);
 
 /**
@@ -64,6 +65,11 @@ export default function Auth() {
     setTimeout(() => {
         navigate(targetPath, { replace: true });
     }, 100);
+  };
+
+  const handleSSO = (provider, e) => {
+    e.preventDefault();
+    toast.success(`${provider} SSO is coming soon!`);
   };
 
   const handleLoginSubmit = async (e) => {
@@ -121,11 +127,6 @@ export default function Auth() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSSO = (provider, e) => {
-    e.preventDefault();
-    toast.success(`${provider} SSO is coming soon!`);
   };
 
   const inputClasses = "w-full pl-11 pr-4 py-3 bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:outline-none transition-all duration-200 font-medium text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500";
@@ -209,43 +210,6 @@ export default function Auth() {
                 )}
               </button>
             </form>
-
-            <div className="mt-7 flex items-center gap-4">
-              <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700/60" />
-              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Or continue with</span>
-              <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700/60" />
-            </div>
-
-            {/* SSO Buttons */}
-            <div className="mt-5 space-y-2.5">
-              <button 
-                type="button"
-                onClick={(e) => handleSSO('Google', e)}
-                className="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-all text-slate-700 dark:text-slate-200 font-medium text-sm"
-              >
-                <GoogleIcon />
-                Google
-              </button>
-              
-              <div className="grid grid-cols-2 gap-2.5">
-                <button 
-                  type="button"
-                  onClick={(e) => handleSSO('Microsoft', e)}
-                  className="flex items-center justify-center gap-2 py-2.5 px-4 bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-all text-slate-700 dark:text-slate-200 font-medium text-sm"
-                >
-                  <MicrosoftIcon />
-                  Microsoft
-                </button>
-                <button 
-                  type="button"
-                  onClick={(e) => handleSSO('GitHub', e)}
-                  className="flex items-center justify-center gap-2 py-2.5 px-4 bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-all text-slate-700 dark:text-slate-200 font-medium text-sm"
-                >
-                  <Github className="w-5 h-5 text-slate-900 dark:text-white" />
-                  GitHub
-                </button>
-              </div>
-            </div>
 
             {!isElectron && (
               <p className="text-center mt-7 text-slate-500 dark:text-slate-400 text-sm">

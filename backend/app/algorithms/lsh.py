@@ -38,7 +38,7 @@ def find_near_duplicate(
         doc_id = str(doc["_id"])
         try:
             m = MinHash(num_perm=perms)
-            m.hashvalues = numpy.array(stored_values, dtype='uint64')
+            m.hashvalues = numpy.array(stored_values, dtype=m.hashvalues.dtype)
             lsh.insert(doc_id, m)
             valid_candidates[doc_id] = doc
         except Exception:

@@ -13,5 +13,5 @@ def jaccard_from_stored(m: MinHash, stored_hashvalues: List[int], num_perm: Opti
     """
     perms = num_perm or settings.MINHASH_NUM_PERM
     m2 = MinHash(num_perm=perms)
-    m2.hashvalues = numpy.array(stored_hashvalues, dtype='uint64')
+    m2.hashvalues = numpy.array(stored_hashvalues, dtype=m2.hashvalues.dtype)
     return float(m.jaccard(m2))

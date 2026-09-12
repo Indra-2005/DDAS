@@ -20,6 +20,8 @@ def sanitize_filename(filename: str) -> str:
     """
     if not filename:
         return "unnamed_file"
+    # Normalize \ to / before extracting basename for cross-platform path traversal handling
+    filename = filename.replace("\\", "/")
     # Extract basename only - strip any path components
     filename = os.path.basename(filename)
     # Remove null bytes

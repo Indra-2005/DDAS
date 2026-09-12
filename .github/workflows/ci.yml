@@ -16,6 +16,11 @@ jobs:
         image: mongo:6.0
         ports:
           - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand({ping: 1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout Code
@@ -41,7 +46,7 @@ jobs:
       - name: Run Backend Test Suite
         working-directory: backend
         env:
-          MONGO_URI: mongodb://localhost:27017
+          MONGO_URI: mongodb://127.0.0.1:27017
           DB_NAME: ddas_test
           STORAGE_PATH: ./test_storage
           JWT_SECRET: test_jwt_secret_must_be_at_least_32_characters_long_123456789

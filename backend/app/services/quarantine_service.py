@@ -6,12 +6,13 @@ import os
 from typing import Dict, Any
 from fastapi import HTTPException, status
 from app.repositories.file_repository import FileRepository
-from app.repositories.blob_repository import BlobRepository
+from app.repositories.blob_repository import BlobRepository, BlobLockManager
 from app.repositories.audit_repository import AuditRepository
 from app.services.encryption_service import EncryptionService
 from app.services.dlp_service import DLPService
 from app.services.storage_service import StorageService
 from app.algorithms.hashing import sha256_bytes, safe_object_id
+from app.db.database import files_collection, blobs_collection
 
 class QuarantineService:
     @staticmethod
@@ -65,12 +66,11 @@ class QuarantineService:
         new_bytes = redacted_content.encode('utf-8')
         new_hash = sha256_bytes(new_bytes)
 
-        # Write encrypted redacted file via StorageService
+        # Write encrypted redacted file via StorageService and register reference under lock
         encrypted_redacted = EncryptionService.encrypt(new_bytes)
-        new_path = StorageService.save(new_hash, encrypted_redacted)
-
-        # Register new blob reference
-        BlobRepository.register_blob_reference(new_hash, new_path)
+        with BlobLockManager.acquire(new_hash):
+            new_path = StorageService.save(new_hash, encrypted_redacted)
+            BlobRepository.register_blob_reference(new_hash, new_path)
 
         old_hash = file_doc.get("hash")
 
@@ -89,11 +89,15 @@ class QuarantineService:
             }
         )
 
-        # Atomically release reference to old blob
-        if old_hash:
-            remaining_refs, path_to_clean = BlobRepository.release_blob_reference(old_hash)
-            if remaining_refs == 0 and path_to_clean:
-                StorageService.delete(path_to_clean)
+        # Atomically release reference to old blob under lock if hash changed
+        if old_hash and old_hash != new_hash:
+            with BlobLockManager.acquire(old_hash):
+                remaining_refs, path_to_clean = BlobRepository.release_blob_reference(old_hash)
+                if remaining_refs == 0 and path_to_clean:
+                    active_files = files_collection.count_documents({"hash": old_hash})
+                    active_blobs = blobs_collection.find_one({"content_hash": old_hash, "ref_count": {"$gt": 0}})
+                    if active_files == 0 and not active_blobs:
+                        StorageService.delete(path_to_clean)
 
         AuditRepository.log(
             username=username,

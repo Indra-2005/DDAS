@@ -19,9 +19,11 @@ from app.services.dedup_service import DedupService
 from app.services.webhook_service import WebhookService
 from app.services.storage_service import StorageService
 from app.repositories.file_repository import FileRepository
-from app.repositories.blob_repository import BlobRepository
+from app.repositories.blob_repository import BlobRepository, BlobLockManager
 from app.repositories.audit_repository import AuditRepository
 from app.schemas.files import UploadResponse, TextResponse, SummaryResponse
+from app.db.database import files_collection, blobs_collection
+from app.core.logging import logger
 
 class FileService:
     @staticmethod
@@ -125,35 +127,47 @@ class FileService:
             file_hash, text, company, filename=safe_filename, file_bytes=file_bytes
         )
 
-        # 7. Physical blob encryption & atomic reference counting
+        # 7. Physical blob encryption & atomic reference counting under concurrency lock
         encrypted_payload = EncryptionService.encrypt(file_bytes)
-        final_path = StorageService.save(file_hash, encrypted_payload)
 
-        # Atomically increment reference count in physical blobs collection
-        BlobRepository.register_blob_reference(file_hash, final_path)
+        with BlobLockManager.acquire(file_hash):
+            final_path = StorageService.save(file_hash, encrypted_payload)
 
-        # 8. Insert logical file record scoped to tenant
-        doc = {
-            "filename": safe_filename,
-            "owner": username,
-            "company": company,
-            "hash": file_hash,
-            "minhash_values": dedup_res.minhash_values,
-            "image_dhash": dedup_res.image_dhash,
-            "dhash_buckets": dedup_res.dhash_buckets,
-            "size": len(file_bytes),
-            "upload_date": datetime.now(timezone.utc),
-            "is_duplicate": dedup_res.is_duplicate,
-            "is_near_duplicate": dedup_res.is_near_duplicate,
-            "similarity_score": dedup_res.similarity_score,
-            "compare_file_id": dedup_res.compare_file_id,
-            "file_path": final_path,
-            "quarantine_status": quarantine_status,
-            "has_sensitive_content": has_sensitive_content,
-            "dlp_violations": dlp_res.violations,
-            "dlp_findings": [f.model_dump() for f in dlp_res.findings]
-        }
-        file_id = FileRepository.insert_file(doc)
+            # Atomically increment reference count in physical blobs collection
+            BlobRepository.register_blob_reference(file_hash, final_path)
+
+            try:
+                # 8. Insert logical file record scoped to tenant
+                doc = {
+                    "filename": safe_filename,
+                    "owner": username,
+                    "company": company,
+                    "hash": file_hash,
+                    "minhash_values": dedup_res.minhash_values,
+                    "image_dhash": dedup_res.image_dhash,
+                    "dhash_buckets": dedup_res.dhash_buckets,
+                    "size": len(file_bytes),
+                    "upload_date": datetime.now(timezone.utc),
+                    "is_duplicate": dedup_res.is_duplicate,
+                    "is_near_duplicate": dedup_res.is_near_duplicate,
+                    "similarity_score": dedup_res.similarity_score,
+                    "compare_file_id": dedup_res.compare_file_id,
+                    "file_path": final_path,
+                    "quarantine_status": quarantine_status,
+                    "has_sensitive_content": has_sensitive_content,
+                    "dlp_violations": dlp_res.violations,
+                    "dlp_findings": [f.model_dump() for f in dlp_res.findings]
+                }
+                file_id = FileRepository.insert_file(doc)
+            except Exception as e:
+                logger.error(f"Upload rollback: file insert failed for {safe_filename} ({file_hash}): {e}")
+                remaining_refs, path_to_clean = BlobRepository.release_blob_reference(file_hash)
+                if remaining_refs == 0 and path_to_clean:
+                    active_files = files_collection.count_documents({"hash": file_hash})
+                    active_blobs = blobs_collection.find_one({"content_hash": file_hash, "ref_count": {"$gt": 0}})
+                    if active_files == 0 and not active_blobs:
+                        StorageService.delete(path_to_clean)
+                raise
 
         # 9. Trigger notifications
         if dlp_res.violations:
@@ -298,21 +312,26 @@ class FileService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized to delete this file")
 
         file_hash = file_doc.get("hash")
-        deleted = FileRepository.delete_file_scoped(file_id, company)
-        if not deleted:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found or already deleted")
 
-        # Concurrency-safe atomic reference decrement
-        if file_hash:
-            remaining_refs, path_to_clean = BlobRepository.release_blob_reference(file_hash)
-            if remaining_refs == 0 and path_to_clean:
-                if StorageService.delete(path_to_clean):
-                    AuditRepository.log(
-                        username=username,
-                        company=company,
-                        action="DELETE_PHYSICAL",
-                        details=f"Physical file purged for hash {file_hash[:12]}..."
-                    )
+        with BlobLockManager.acquire(file_hash):
+            deleted = FileRepository.delete_file_scoped(file_id, company)
+            if not deleted:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found or already deleted")
+
+            # Concurrency-safe atomic reference decrement
+            if file_hash:
+                remaining_refs, path_to_clean = BlobRepository.release_blob_reference(file_hash)
+                if remaining_refs == 0 and path_to_clean:
+                    active_files = files_collection.count_documents({"hash": file_hash})
+                    active_blobs = blobs_collection.find_one({"content_hash": file_hash, "ref_count": {"$gt": 0}})
+                    if active_files == 0 and not active_blobs:
+                        if StorageService.delete(path_to_clean):
+                            AuditRepository.log(
+                                username=username,
+                                company=company,
+                                action="DELETE_PHYSICAL",
+                                details=f"Physical file purged for hash {file_hash[:12]}..."
+                            )
 
         AuditRepository.log(
             username=username,

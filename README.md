@@ -14,61 +14,82 @@ DDAS leverages a modular, production-hardened backend built with FastAPI, connec
 
 ```mermaid
 graph TD
-    subgraph Client Layer
-        WebUI[React Web UI]
+    subgraph ClientLayer["Client Layer"]
+        WebUI["React Web UI"]
     end
 
-    subgraph API Layer [FastAPI Versioned Routers]
-        Router["/api/v1/* (and Root Backward-Compatible Aliases)"]
+    subgraph APILayer["API Layer"]
+        Router["/api/v1/* and Root Aliases"]
         RateLimit["Rate Limiter (SlowAPI)"]
-        AuthMW["Auth & RBAC Dependency Injection (get_current_user, require_role)"]
+        AuthMW["Auth and RBAC (get_current_user, require_role)"]
     end
 
-    subgraph Service Layer
-        AuthService[Auth Service]
-        FileService[File Orchestration Service]
-        DedupService[Dedup Service]
-        DLPService[DLP Engine]
-        EncService[AES-256-GCM Encryption Service]
-        QuarantineService[Quarantine Remediation Service]
-        StorageService[Storage Abstraction Service]
-        WebhookService[Webhook Notification Service]
+    subgraph ServiceLayer["Service Layer"]
+        AuthService["Auth Service"]
+        FileService["File Orchestration Service"]
+        DedupService["Dedup Service"]
+        DLPService["DLP Engine"]
+        EncService["AES-256-GCM Encryption Service"]
+        QuarantineService["Quarantine Remediation Service"]
+        StorageService["Storage Abstraction Service"]
+        WebhookService["Webhook Notification Service"]
     end
 
-    subgraph Algorithm Layer
-        SHA256[SHA-256 Digest]
-        MinHash[MinHash Signatures - 128 Permutations]
-        LSH[MinHashLSH Candidate Discovery]
-        Jaccard[Exact Jaccard Verifier]
-        dHash[dHash 16x16 Perceptual Hash]
-        dHashBuckets[32-Bucket Pigeonhole Candidate Index]
-        MIMECheck[libmagic Bounded Header & Extension Filter]
-        Luhn[Luhn Checksum Verifier]
+    subgraph AlgorithmLayer["Algorithm Layer"]
+        SHA256["SHA-256 Digest"]
+        MinHash["MinHash Signatures (128 Permutations)"]
+        LSH["MinHashLSH Candidate Discovery"]
+        Jaccard["Exact Jaccard Verifier"]
+        dHash["dHash 16x16 Perceptual Hash"]
+        dHashBuckets["32-Bucket Pigeonhole Candidate Index"]
+        MIMECheck["libmagic and Extension Filter"]
+        Luhn["Luhn Checksum Verifier"]
     end
 
-    subgraph Concurrency & Repository Layer
-        LockMgr[BlobLockManager - Keyed Mutex per Content Hash]
-        FileRepo[Tenant-Scoped File Repository]
-        BlobRepo[Atomic Ref-Counting Blob Repository]
-        UserRepo[Tenant-Scoped User Repository]
-        AuditRepo[Tenant-Scoped Audit Repository]
-        SettingsRepo[Tenant-Scoped Settings Repository]
+    subgraph RepositoryLayer["Concurrency and Repository Layer"]
+        LockMgr["BlobLockManager (Keyed Mutex per Hash)"]
+        FileRepo["Tenant-Scoped File Repository"]
+        BlobRepo["Atomic Ref-Counting Blob Repository"]
+        UserRepo["Tenant-Scoped User Repository"]
+        AuditRepo["Tenant-Scoped Audit Repository"]
+        SettingsRepo["Tenant-Scoped Settings Repository"]
     end
 
-    subgraph Data Tier
-        DB[(MongoDB - ddas_db)]
-        Vault[(Encrypted Storage Vault - AES-256-GCM)]
+    subgraph DataTier["Data Tier"]
+        DB[("MongoDB (ddas_db)")]
+        Vault[("Encrypted Storage Vault (AES-256-GCM)")]
     end
 
     WebUI --> Router
-    Router --> RateLimit --> AuthMW
-    AuthMW --> Service Layer
-    Service Layer --> Algorithm Layer
-    Service Layer --> LockMgr
-    LockMgr --> Repository Layer
-    Service Layer --> StorageService
-    Repository Layer --> DB
+    Router --> RateLimit
+    RateLimit --> AuthMW
+    AuthMW --> AuthService
+    AuthMW --> FileService
+    AuthMW --> QuarantineService
+    FileService --> DedupService
+    FileService --> DLPService
+    FileService --> EncService
+    FileService --> StorageService
+    FileService --> WebhookService
+    DedupService --> SHA256
+    DedupService --> MinHash
+    MinHash --> LSH
+    LSH --> Jaccard
+    DedupService --> dHash
+    dHash --> dHashBuckets
+    DLPService --> Luhn
+    FileService --> MIMECheck
+    FileService --> LockMgr
+    QuarantineService --> LockMgr
+    LockMgr --> BlobRepo
+    LockMgr --> FileRepo
+    AuthService --> UserRepo
     StorageService --> Vault
+    FileRepo --> DB
+    BlobRepo --> DB
+    UserRepo --> DB
+    AuditRepo --> DB
+    SettingsRepo --> DB
 ```
 
 ---

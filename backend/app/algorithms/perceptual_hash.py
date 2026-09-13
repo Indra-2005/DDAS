@@ -26,9 +26,11 @@ def compute_dhash(image_bytes: bytes, hash_size: int = 16) -> Optional[str]:
     Returns None if the image cannot be decoded.
     """
     try:
-        img = Image.open(io.BytesIO(image_bytes)).convert('L')
-        img = img.resize((hash_size + 1, hash_size), Image.LANCZOS)
-        pixels = list(img.getdata())
+        with Image.open(io.BytesIO(image_bytes)) as raw_img:
+            img = raw_img.convert('L')
+            img = img.resize((hash_size + 1, hash_size), Image.LANCZOS)
+            pixels = list(img.getdata())
+            img.close()
         width = hash_size + 1
 
         bits = []

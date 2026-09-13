@@ -3,6 +3,8 @@ File service orchestrating uploads, deduplication, DLP scanning,
 AES-256-GCM encryption, safe downloads, and atomic physical deletion.
 """
 import io
+import os
+import tempfile
 import urllib.parse
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional, Tuple, List
@@ -66,7 +68,10 @@ class FileService:
                 detail="Empty file upload is prohibited"
             )
 
-        return b"".join(chunks)
+        data = b"".join(chunks)
+        chunks.clear()
+        del chunks
+        return data
 
     @staticmethod
     async def process_upload(
@@ -128,10 +133,15 @@ class FileService:
         )
 
         # 7. Physical blob encryption & atomic reference counting under concurrency lock
-        encrypted_payload = EncryptionService.encrypt(file_bytes)
-
         with BlobLockManager.acquire(file_hash):
-            final_path = StorageService.save(file_hash, encrypted_payload)
+            # Fast-path for duplicate blobs: if physical blob is already persisted,
+            # skip redundant re-encryption, saving 100% of encryption RAM and CPU
+            if StorageService.exists(file_hash):
+                final_path = StorageService._resolve_path(file_hash)
+            else:
+                encrypted_payload = EncryptionService.encrypt(file_bytes)
+                final_path = StorageService.save(file_hash, encrypted_payload)
+                del encrypted_payload  # Free encrypted bytes immediately from local scope
 
             # Atomically increment reference count in physical blobs collection
             BlobRepository.register_blob_reference(file_hash, final_path)
@@ -229,8 +239,9 @@ class FileService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Physical file missing from storage")
 
         encrypted_bytes = StorageService.read_path(path)
-
         decrypted_bytes = EncryptionService.decrypt(encrypted_bytes)
+        del encrypted_bytes  # Immediately free encrypted bytes from RAM
+
         safe_name = sanitize_filename(file_doc['filename'])
 
         AuditRepository.log(
@@ -243,12 +254,52 @@ class FileService:
 
         # RFC 6266 compliant Content-Disposition with URL-encoded filename
         encoded_name = urllib.parse.quote(safe_name, safe='')
+        file_size = len(decrypted_bytes)
+        chunk_size = 64 * 1024
+
+        if file_size > 10 * 1024 * 1024:
+            # Large files (>10MB): Spool to temporary file to free decrypted_bytes from RAM immediately,
+            # streaming bounded 64KB chunks to network with guaranteed cleanup
+            storage_dir = settings.effective_storage_dir
+            temp_fd, temp_path = tempfile.mkstemp(prefix=".dl_spool_", dir=storage_dir)
+            try:
+                with os.fdopen(temp_fd, "wb") as tf:
+                    tf.write(decrypted_bytes)
+            finally:
+                del decrypted_bytes
+
+            def iter_file(spool_path: str):
+                try:
+                    with open(spool_path, "rb") as f:
+                        while True:
+                            chunk = f.read(chunk_size)
+                            if not chunk:
+                                break
+                            yield chunk
+                finally:
+                    try:
+                        os.remove(spool_path)
+                    except OSError:
+                        pass
+
+            stream_iter = iter_file(temp_path)
+        else:
+            # Small files (<=10MB): Stream 64KB chunks from memoryview without buffer copy
+            def iter_memory(data: bytes):
+                mv = memoryview(data)
+                total = len(mv)
+                for i in range(0, total, chunk_size):
+                    yield bytes(mv[i : min(i + chunk_size, total)])
+
+            stream_iter = iter_memory(decrypted_bytes)
+
         return StreamingResponse(
-            io.BytesIO(decrypted_bytes),
+            stream_iter,
             media_type="application/octet-stream",
             headers={
                 "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_name}",
-                "X-Content-Type-Options": "nosniff"
+                "X-Content-Type-Options": "nosniff",
+                "Content-Length": str(file_size)
             }
         )
 

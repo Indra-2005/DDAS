@@ -31,8 +31,10 @@ class EncryptionService:
             return data
 
         nonce_start = len(MAGIC_HEADER)
-        nonce = data[nonce_start : nonce_start + 12]
-        ciphertext = data[nonce_start + 12 :]
+        # Zero-copy memoryview slice avoids allocating duplicate ciphertext buffer in RAM
+        mv = memoryview(data)
+        nonce = bytes(mv[nonce_start : nonce_start + 12])
+        ciphertext = mv[nonce_start + 12 :]
 
         key = settings.encryption_key_bytes
         aesgcm = AESGCM(key)

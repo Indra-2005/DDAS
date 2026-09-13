@@ -34,7 +34,10 @@ def validate_file_content(file_bytes: bytes, filename: str) -> str:
         )
 
     try:
-        detected_mime = magic.from_buffer(file_bytes, mime=True)
+        # Bounded buffer: libmagic only requires header magic numbers (up to 64KB)
+        # Slicing avoids passing entire multi-hundred-megabyte payloads to libmagic FFI
+        header_sample = file_bytes[:65536] if len(file_bytes) > 65536 else file_bytes
+        detected_mime = magic.from_buffer(header_sample, mime=True)
     except Exception as e:
         logger.warning(f"MIME detection fallback: {e}")
         detected_mime = "application/octet-stream"

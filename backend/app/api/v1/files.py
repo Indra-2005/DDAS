@@ -5,6 +5,7 @@ Strictly tenant-scoped to ensure absolute isolation.
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query, Body, Request, status
 from fastapi.responses import StreamingResponse
+from app.core.config import settings
 from app.core.limiter import limiter
 from app.core.dependencies import get_current_user
 from app.services.file_service import FileService
@@ -30,7 +31,27 @@ async def upload_file(
     Uploads document: validates size & MIME, scans DLP, runs exact & near-duplicate
     deduplication, encrypts with AES-256-GCM, and persists metadata.
     """
-    file_bytes = await file.read()
+    # 1. Early rejection via Content-Length header if present and valid
+    content_length_header = request.headers.get("content-length")
+    if content_length_header is not None:
+        try:
+            content_length = int(content_length_header)
+            if content_length >= 0 and content_length > settings.max_upload_size_bytes:
+                raise HTTPException(
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE_MB}MB"
+                )
+        except (ValueError, TypeError):
+            # Invalid/malformed Content-Length: fall through to safe chunked reading
+            pass
+
+    # 2. Incremental bounded chunked reading with early abort
+    file_bytes = await FileService.read_upload_safely(
+        file=file,
+        max_bytes=settings.max_upload_size_bytes
+    )
+
+    # 3. Downstream processing
     return await FileService.process_upload(
         file_bytes=file_bytes,
         original_filename=file.filename,

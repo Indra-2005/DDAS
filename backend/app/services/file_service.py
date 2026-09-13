@@ -6,7 +6,7 @@ import io
 import urllib.parse
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional, Tuple, List
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, UploadFile
 from fastapi.responses import StreamingResponse
 from app.core.config import settings
 from app.algorithms.hashing import sha256_bytes, sanitize_filename, safe_object_id
@@ -24,6 +24,48 @@ from app.repositories.audit_repository import AuditRepository
 from app.schemas.files import UploadResponse, TextResponse, SummaryResponse
 
 class FileService:
+    @staticmethod
+    async def read_upload_safely(
+        file: UploadFile,
+        max_bytes: int,
+        chunk_size: int = 1024 * 1024,
+    ) -> bytes:
+        """
+        Reads an UploadFile incrementally in bounded chunks to prevent arbitrary memory consumption.
+        Stops reading immediately once max_bytes is exceeded and raises HTTP 413.
+        Rejects empty uploads with HTTP 400.
+        
+        NOTE: This bounded streaming reader early-aborts oversized uploads so that
+        arbitrarily large bodies (e.g. multi-gigabyte files) cannot consume application memory.
+        Valid uploads up to the configured limit are assembled into a complete bytes object
+        as required by downstream processing (MIME magic bytes, SHA-256, text extraction,
+        DLP, perceptual hashing, and encryption), requiring up to max_bytes of memory per active upload.
+        """
+        chunks: List[bytes] = []
+        total_read = 0
+
+        while True:
+            chunk = await file.read(chunk_size)
+            if not chunk:
+                break
+            total_read += len(chunk)
+            if total_read > max_bytes:
+                # Stop reading immediately and free already accumulated chunks
+                del chunks
+                raise HTTPException(
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE_MB}MB"
+                )
+            chunks.append(chunk)
+
+        if total_read == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Empty file upload is prohibited"
+            )
+
+        return b"".join(chunks)
+
     @staticmethod
     async def process_upload(
         file_bytes: bytes,

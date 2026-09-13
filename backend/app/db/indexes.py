@@ -25,6 +25,7 @@ def ensure_indexes():
         files_collection.create_index([("company", ASCENDING), ("hash", ASCENDING)])
         files_collection.create_index([("company", ASCENDING), ("quarantine_status", ASCENDING)])
         files_collection.create_index([("company", ASCENDING), ("owner", ASCENDING)])
+        files_collection.create_index([("company", ASCENDING), ("dhash_buckets", ASCENDING)])  # For perceptual image near-duplicate candidate discovery
         files_collection.create_index([("hash", ASCENDING)])  # For global reference tracking
 
         # Blobs (Physical storage reference tracking)

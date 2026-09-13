@@ -81,6 +81,30 @@ class FileRepository:
         return list(cursor)
 
     @staticmethod
+    def get_tenant_image_candidates(company: str, dhash_buckets: List[str]) -> List[Dict[str, Any]]:
+        """
+        Retrieves tenant image records matching at least one perceptual hash bucket token.
+        Preserves strict tenant isolation and includes legacy records (without dhash_buckets)
+        for backward compatibility.
+        """
+        if not dhash_buckets:
+            cursor = files_collection.find(
+                {"company": company, "image_dhash": {"$exists": True, "$ne": None}},
+                {"_id": 1, "image_dhash": 1}
+            )
+            return list(cursor)
+
+        query = {
+            "company": company,
+            "$or": [
+                {"dhash_buckets": {"$in": dhash_buckets}},
+                {"dhash_buckets": {"$exists": False}, "image_dhash": {"$exists": True, "$ne": None}}
+            ]
+        }
+        cursor = files_collection.find(query, {"_id": 1, "image_dhash": 1})
+        return list(cursor)
+
+    @staticmethod
     def get_quarantined_scoped(company: str, skip: int = 0, limit: int = 50) -> Tuple[List[Dict[str, Any]], int]:
         """Retrieves quarantined files for tenant admin remediation, paginated."""
         query = {"company": company, "quarantine_status": "quarantined"}

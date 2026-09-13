@@ -5,7 +5,7 @@ independent of the text-based MinHash/LSH pipeline.
 """
 import io
 import os
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 from PIL import Image
 
 # Image extensions that support perceptual hashing
@@ -119,3 +119,24 @@ def find_image_near_duplicate(
         return True, best_sim, best_id
 
     return False, best_sim, None
+
+
+def compute_dhash_buckets(dhash: str, num_blocks: int = 32) -> List[str]:
+    """
+    Partitions a 64-character (256-bit) dHash into 32 8-bit (2-hex) bucket tokens
+    for sub-linear candidate discovery via the Pigeonhole Principle.
+    
+    With threshold=90.0%, max bit differences r <= 25.
+    Since r=25 < num_blocks=32, any near-duplicate is guaranteed to match on at least
+    32 - 25 = 7 bucket tokens (zero false negatives).
+    """
+    if not dhash or len(dhash) < 2:
+        return []
+    step = max(1, len(dhash) // num_blocks)
+    buckets = []
+    for i in range(num_blocks):
+        start = i * step
+        end = start + step if i < num_blocks - 1 else len(dhash)
+        buckets.append(f"{i}:{dhash[start:end]}")
+    return buckets
+

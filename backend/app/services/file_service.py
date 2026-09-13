@@ -140,6 +140,7 @@ class FileService:
             "hash": file_hash,
             "minhash_values": dedup_res.minhash_values,
             "image_dhash": dedup_res.image_dhash,
+            "dhash_buckets": dedup_res.dhash_buckets,
             "size": len(file_bytes),
             "upload_date": datetime.now(timezone.utc),
             "is_duplicate": dedup_res.is_duplicate,

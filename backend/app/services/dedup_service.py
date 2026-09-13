@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from app.algorithms.minhash import build_minhash
 from app.algorithms.lsh import find_near_duplicate
 from app.algorithms.perceptual_hash import (
-    compute_dhash, is_image_file, find_image_near_duplicate
+    compute_dhash, is_image_file, find_image_near_duplicate, compute_dhash_buckets
 )
 from app.db.database import files_collection
 from app.repositories.file_repository import FileRepository
@@ -20,6 +20,7 @@ class DedupResult(BaseModel):
     compare_file_id: Optional[str] = None
     minhash_values: Optional[List[int]] = None
     image_dhash: Optional[str] = None
+    dhash_buckets: Optional[List[str]] = None
 
 class DedupService:
     @staticmethod
@@ -62,22 +63,24 @@ class DedupService:
                         compare_file_id = matched_id
 
         # 3. Near-Duplicate Check — Images via perceptual dHash
+        dhash_buckets = None
         if filename and file_bytes and is_image_file(filename):
             image_dhash = compute_dhash(file_bytes)
-            if image_dhash and not is_near_duplicate:
-                # Query tenant's image files for perceptual matches
-                img_candidates = list(files_collection.find(
-                    {"company": company, "image_dhash": {"$exists": True, "$ne": None}},
-                    {"_id": 1, "image_dhash": 1}
-                ))
-                if img_candidates:
-                    img_near, img_sim, img_match = find_image_near_duplicate(
-                        image_dhash, img_candidates
+            if image_dhash:
+                dhash_buckets = compute_dhash_buckets(image_dhash)
+                if not is_near_duplicate:
+                    # Query tenant's image candidates using indexed multi-index buckets
+                    img_candidates = FileRepository.get_tenant_image_candidates(
+                        company, dhash_buckets
                     )
-                    if img_near:
-                        is_near_duplicate = True
-                        similarity_score = img_sim
-                        compare_file_id = img_match
+                    if img_candidates:
+                        img_near, img_sim, img_match = find_image_near_duplicate(
+                            image_dhash, img_candidates
+                        )
+                        if img_near:
+                            is_near_duplicate = True
+                            similarity_score = img_sim
+                            compare_file_id = img_match
 
         return DedupResult(
             is_duplicate=is_duplicate,
@@ -85,6 +88,7 @@ class DedupService:
             similarity_score=similarity_score,
             compare_file_id=compare_file_id,
             minhash_values=minhash_values,
-            image_dhash=image_dhash
+            image_dhash=image_dhash,
+            dhash_buckets=dhash_buckets
         )
 

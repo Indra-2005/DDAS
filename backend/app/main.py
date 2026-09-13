@@ -13,6 +13,7 @@ from app.core.config import settings
 from app.core.logging import logger
 from app.core.limiter import limiter
 from app.db.indexes import ensure_indexes
+from app.services.storage_service import StorageService
 from app.api.v1.router import api_v1_router
 
 # Sub-routers for root backward-compatibility
@@ -25,9 +26,10 @@ from app.api.v1.health import router as health_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan manager: ensures indexes on startup."""
+    """Application lifespan manager: ensures indexes and cleans stale temp files on startup."""
     logger.info("Initializing DDAS backend services...")
     ensure_indexes()
+    StorageService.cleanup_stale_temp_files()
     yield
     logger.info("Shutting down DDAS backend services...")
 

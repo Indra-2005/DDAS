@@ -38,7 +38,7 @@ async def upload_file(
             content_length = int(content_length_header)
             if content_length >= 0 and content_length > settings.max_upload_size_bytes:
                 raise HTTPException(
-                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    status_code=status.HTTP_413_CONTENT_TOO_LARGE,
                     detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE_MB}MB"
                 )
         except (ValueError, TypeError):

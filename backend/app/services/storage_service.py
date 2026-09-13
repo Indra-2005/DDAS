@@ -127,3 +127,48 @@ class StorageService:
     def exists_path(cls, path: str) -> bool:
         """Checks whether a file exists at an absolute path."""
         return bool(path) and os.path.exists(path)
+
+    @classmethod
+    def cleanup_stale_temp_files(cls, max_age_seconds: int = 3600) -> int:
+        """
+        Safely removes orphaned temporary files (.tmp_* and .dl_spool_*) in the
+        storage directory created before max_age_seconds.
+        Preserves fresh active uploads/downloads and never touches legitimate storage blobs.
+        Safely handles missing directories, concurrent access, and OS errors.
+        Returns the count of deleted stale files.
+        """
+        import time
+        storage_dir = settings.effective_storage_dir
+        if not os.path.exists(storage_dir):
+            return 0
+
+        now = time.time()
+        removed_count = 0
+
+        try:
+            entries = os.listdir(storage_dir)
+        except OSError as e:
+            logger.warning(f"StorageService: Failed to list directory {storage_dir} for stale cleanup: {e}")
+            return 0
+
+        for entry in entries:
+            # Strictly match only DDAS temporary prefixes
+            if not (entry.startswith(".tmp_") or entry.startswith(".dl_spool_")):
+                continue
+
+            full_path = os.path.join(storage_dir, entry)
+            try:
+                stat = os.stat(full_path)
+                # Only clean if older than max_age_seconds
+                if now - stat.st_mtime >= max_age_seconds:
+                    os.remove(full_path)
+                    removed_count += 1
+                    logger.debug(f"StorageService: Cleaned stale temporary file {entry}")
+            except (FileNotFoundError, PermissionError, OSError) as e:
+                # File may have been removed concurrently by active stream or permission denied
+                logger.debug(f"StorageService: Could not remove {entry}: {e}")
+
+        if removed_count > 0:
+            logger.info(f"StorageService: Purged {removed_count} stale temporary files from {storage_dir}")
+
+        return removed_count

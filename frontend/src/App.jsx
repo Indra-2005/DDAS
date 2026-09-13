@@ -141,7 +141,7 @@ function TopNav() {
               <NavItem to="/upload" label="Upload" />
               <NavItem to="/files" label="Shared Files" />
               <NavItem to="/dashboard" label="Analytics" />
-              {role === 'admin' && (
+              {(role === 'admin' || role === 'super_admin') && (
                 <>
                   <NavItem to="/admin/logs" label="Audit Logs" />
                   <NavItem to="/admin/team" label="Team" />
@@ -279,7 +279,7 @@ function TopNav() {
                   </button>
                 )}
 
-                {role === 'admin' && (
+                {(role === 'admin' || role === 'super_admin') && (
                   <>
                     <div className="px-4 py-2 mt-4 text-[10px] font-bold text-amber-500/80 uppercase tracking-wider">Admin</div>
                     <NavItem to="/admin/logs" label="Audit Logs" mobile />

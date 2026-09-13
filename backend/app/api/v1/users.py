@@ -42,8 +42,12 @@ async def read_users_me(current_user: Dict[str, Any] = Depends(get_current_user)
         "is_duplicate": True
     })
 
-    user_files = files_collection.find({"owner": username, "company": company})
-    storage_used_bytes = sum(f.get("size", 0) for f in user_files)
+    storage_pipeline = [
+        {"$match": {"owner": username, "company": company}},
+        {"$group": {"_id": None, "total": {"$sum": "$size"}}}
+    ]
+    storage_res = list(files_collection.aggregate(storage_pipeline))
+    storage_used_bytes = storage_res[0]["total"] if storage_res else 0
 
     return {
         "username": user_data["username"],

@@ -57,7 +57,7 @@ class FileService:
                 # Stop reading immediately and free already accumulated chunks
                 del chunks
                 raise HTTPException(
-                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    status_code=status.HTTP_413_CONTENT_TOO_LARGE,
                     detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE_MB}MB"
                 )
             chunks.append(chunk)
@@ -102,7 +102,7 @@ class FileService:
         # 1. Size limit check
         if len(file_bytes) > settings.max_upload_size_bytes:
             raise HTTPException(
-                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
                 detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE_MB}MB"
             )
         if len(file_bytes) == 0:
@@ -359,7 +359,7 @@ class FileService:
         if not file_doc:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
 
-        if role != "admin" and file_doc["owner"] != username:
+        if role not in (UserRole.ADMIN.value, UserRole.SUPER_ADMIN.value) and file_doc["owner"] != username:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized to delete this file")
 
         file_hash = file_doc.get("hash")

@@ -35,7 +35,7 @@ export default function Files() {
 
   const role = localStorage.getItem("ddas_role");
   const currentUsername = localStorage.getItem("ddas_user");
-  const isAdmin = role === "admin";
+  const isAdmin = role === "admin" || role === "super_admin";
 
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);

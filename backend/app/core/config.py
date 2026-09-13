@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     JWT_SECRET: str = Field(..., min_length=32, description="Secret key for JWT generation (min 32 chars)")
     JWT_ALGORITHM: str = Field(default="HS256", alias="JWT_ALGO")
     ACCESS_TOKEN_EXPIRE_HOURS: int = Field(default=24)
+    ACCESS_TOKEN_EXPIRE_MINUTES: Optional[int] = Field(default=None, description="Optional compatibility alias in minutes")
     ADMIN_SECRET: Optional[str] = Field(default=None, description="Secret required for admin registration")
 
     # Encryption at rest
@@ -91,6 +92,12 @@ class Settings(BaseSettings):
             path = "./storage"
         os.makedirs(path, exist_ok=True)
         return path
+
+    @property
+    def token_expire_hours(self) -> int:
+        if self.ACCESS_TOKEN_EXPIRE_MINUTES is not None and self.ACCESS_TOKEN_EXPIRE_MINUTES > 0:
+            return max(1, self.ACCESS_TOKEN_EXPIRE_MINUTES // 60)
+        return self.ACCESS_TOKEN_EXPIRE_HOURS
 
 # Instantiate singleton settings
 settings = Settings()

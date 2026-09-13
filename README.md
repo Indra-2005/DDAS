@@ -1,10 +1,39 @@
 # DDAS — Data Download Duplication Alert System
 
-DDAS is a deterministic security, compliance, auditing, and storage optimization platform designed to regulate corporate file downloads and storage workflows. It features a hardened multi-tenant architecture, cryptographic physical deduplication, near-duplicate content fingerprinting via MinHash LSH, perceptual image deduplication via dHash, and real-time Data Loss Prevention (DLP) compliance alerting.
+**DDAS (Data Download Duplication Alert System)** is a production-hardened, multi-tenant file storage and compliance platform engineered for **duplicate file detection**, **near-duplicate content identification**, and **data loss prevention (DLP)**. Built with FastAPI, MongoDB, and React, DDAS eliminates redundant data accumulation across enterprise environments while enforcing strict multi-tenant isolation, cryptographic access controls, and comprehensive audit logging.
+
+DDAS delivers multi-layered file deduplication by combining **SHA-256 exact deduplication**, **MinHash and Locality-Sensitive Hashing (LSH)** for document text similarity, and **difference hashing (dHash) perceptual hashing** for image near-duplicate detection. Every asset is protected at rest using authenticated **AES-256-GCM encryption**, defended against sensitive data exfiltration via deterministic **DLP inspection with Luhn validation**, and guarded by robust **role-based access control (RBAC)**.
 
 > **Deterministic Security Guarantee:** DDAS operates strictly on deterministic algorithms (SHA-256 cryptographic hashing, MinHash LSH, dHash perceptual hashing, AES-256-GCM encryption, regular expressions with Luhn checksum verification). **DDAS currently does not use ML, AI, LLMs, neural networks, embeddings, or predictive models.** (ML/AI classification remains exclusively as a potential future roadmap item).
 
 > **⚠️ Security Notice:** If deploying to production, you MUST rotate ALL secrets in your `.env` file. Generate new values using: `python -c "import secrets; print(secrets.token_urlsafe(48))"` for `JWT_SECRET` and `python -c "import secrets; print(secrets.token_hex(32))"` for `ENCRYPTION_MASTER_KEY`.
+
+---
+
+## 💡 Why DDAS?
+
+Enterprise workspaces, cloud drives, and collaborative portals inevitably accumulate massive volumes of redundant files. Employees download and re-upload identical attachments, modify a few paragraphs in contracts or reports, and save slightly edited or resized versions of brand assets. This sprawl causes:
+
+1. **Storage Inefficiency & Spiraling Costs:** Identical and near-identical files waste significant disk capacity, backup bandwidth, and cloud storage budgets.
+2. **Data Governance & Compliance Risks:** Sensitive corporate assets (PII, API keys, credentials, financial records) proliferate unchecked across unmonitored duplicate copies.
+3. **Cross-Tenant Security Challenges:** Multi-tenant environments require strict logical isolation so that global storage optimization never leaks data or metadata across organizational boundaries.
+
+DDAS solves these challenges with a deterministic, high-throughput pipeline that intercepts file uploads and downloads, calculates cryptographic and similarity fingerprints, screens for compliance violations, deduplicates physical blobs safely, and maintains an immutable audit trail.
+
+---
+
+## ✨ Key Features
+
+- **SHA-256 Exact File Deduplication:** Global content-addressed physical storage eliminates redundant disk usage across tenants while maintaining isolated logical records.
+- **MinHash / LSH Text Near-Duplicate Detection:** Tokenizes document text into 128-permutation MinHash signatures with sub-linear Locality-Sensitive Hashing (LSH) candidate discovery and exact Jaccard similarity verification.
+- **dHash Image Near-Duplicate Detection:** 16×16 perceptual difference hashing with a 32-bucket Pigeonhole candidate index for fast, zero-false-negative visual match discovery.
+- **Deterministic Data Loss Prevention (DLP):** Real-time regex scanning for credit cards (with Luhn checksum validation), AWS keys, GitHub tokens, API secrets, SSNs, IBANs, phone numbers, and emails with automatic quarantine.
+- **AES-256-GCM Encryption at Rest:** Every physical blob is encrypted with an independent 256-bit master key and unique 96-bit nonces per write.
+- **Strict Multi-Tenant Isolation:** Complete logical scoping across all collections; cross-tenant queries return strict 404 responses to eliminate Insecure Direct Object Reference (IDOR) vulnerabilities.
+- **Role-Based Access Control (RBAC):** Granular roles (`employee`, `admin`, `super_admin`, `auditor`) enforcing administrative quarantine remediation and file ownership boundaries.
+- **Comprehensive Audit Logging:** Immutable tenant-scoped audit stream tracking uploads, downloads, deletions, password resets, and policy violations.
+- **Safe File Lifecycle & Concurrency Controls:** `BlobLockManager` mutex synchronization, atomic temporary writes (`os.replace`), and guarded MongoDB reference counting prevent race conditions and data loss.
+- **Memory-Conscious Ingestion & Streaming:** Incremental chunked reading with early upload size aborts and large-download disk spooling for files over 10 MB.
 
 ---
 
